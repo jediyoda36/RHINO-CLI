@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +27,7 @@ var runCmd = &cobra.Command{
 			cmd.Help()
 			os.Exit(0)
 		}
-		fmt.Println("print yaml and apply to k8s")
+		fmt.Println(printYAML(args))
 		return nil
 	},
 }
@@ -38,4 +39,45 @@ func init() {
 	runCmd.MarkFlagsRequiredTogether("server", "dir")
 	runCmd.Flags().IntVarP(&parallel, "np", "n", 1, "mpi processes")
 	runCmd.Flags().IntVarP(&execTime, "ttl", "t", 600, "estimated execution time(s)")
+}
+
+func printYAML(args []string) (yamlFile string) {
+	funcName := getFuncName(args[0])
+	fmt.Println(args)
+	yamlFile = `apiVersion: openrhino.org/v1alpha1
+kind: RhinoJob
+metadata:
+  labels:
+    app.kubernetes.io/name: rhinojob 
+    app.kubernetes.io/instance: rhinojob-` 
+	yamlFile += funcName + `
+    app.kubernetes.io/part-of: rhino-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: rhino-operator
+  name: rhinojob-`
+  	yamlFile += funcName +`
+spec:
+  image: "`
+  	yamlFile += args[0] + `"
+  ttl: `
+  	yamlFile += strconv.Itoa(execTime) + `
+  parallelism: `
+  	yamlFile += strconv.Itoa(parallel) + ` 
+  appExec: "./` 
+  	yamlFile += funcName
+	if len(args) > 1 {
+		yamlFile += `"
+  appArgs: [`
+		for i := 1; i < len(args); i++ {
+			yamlFile += `"` + args[i] + `", `
+		}
+		yamlFile += `]`	
+	} 
+	if len(dataServer) != 0 {
+		yamlFile += `
+  dataServer: "` + dataServer + `"`
+  		yamlFile += `
+  dataPath: "` + dataPath + `"`
+	}
+	return yamlFile
 }

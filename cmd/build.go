@@ -48,8 +48,7 @@ func builder(image string, path string) error {
 		return err
 	}
 	var execArgs []string
-	nameTag := strings.Split(image, "/")
-	funcName := strings.Split(nameTag[len(nameTag) - 1], ":")[0]
+	funcName :=  getFuncName(image)
 
 	// TODO: compile proj
 	if f.IsDir() {
@@ -97,4 +96,10 @@ func execute(commandName string, params []string) (string, error) {
     }
     err = cmd.Wait()
     return out.String(), err
+}
+
+func getFuncName(image string) string {
+	nameTag := strings.Split(image, "/")
+	funcName := strings.Split(nameTag[len(nameTag) - 1], ":")[0]
+	return funcName
 }
