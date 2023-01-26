@@ -1,4 +1,4 @@
-module rhino-cli
+module openrhino.org/rhino-cli
 
 go 1.19
 
