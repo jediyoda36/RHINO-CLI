@@ -1,10 +1,14 @@
 package cmd
 
 import (
+	"archive/zip"
 	"fmt"
-	"os"
 	"io"
+	"net/http"
+	"os"
+	"path/filepath"
 	"regexp"
+
 	"github.com/spf13/cobra"
 )
 
@@ -47,44 +51,80 @@ func argsCheck(cmd *cobra.Command, args []string) error {
 }
 
 func runCreate(cmd *cobra.Command, args []string) error {
-	name := args[0]
-	if _, err := os.Stat(name); err == nil {
-		fmt.Println("Error: folder", name, "already exists")
+	dirName := args[0]
+	if _, err := os.Stat(dirName); err == nil {
+		fmt.Println("Error: folder", dirName, "already exists")
 		os.Exit(0)
 	}
-	if err := os.Mkdir(name, 0700); err != nil {
-		fmt.Println("Error: folder", name, "could not create")
+	if err := os.Mkdir(dirName, 0700); err != nil {
+		fmt.Println("Error: folder", dirName, "could not create")
 		os.Exit(0)
 	}
-	// TODO: download file from github, if fail, delete folder
-	// if err := copyFile("./template/func/func.dockerfile", "./test/func.dockerfile"); err != nil {
-	// 	fmt.Println("Error:", err.Error())
-	// 	os.Exit(0)
-	// }
 	
+	// download the template from github, if fail, delete folder
+	templateURL := "https://github.com/OpenRHINO/templates/raw/main/func.zip"
+	if err := downloadTemplate(templateURL, dirName); err != nil {
+		fmt.Println("Error:", err.Error())
+		os.Exit(0)
+	}
+
 	return nil
 }
 
-func copyFile(src, dst string) error {
-	sourceFileStat, err := os.Stat(src)
+func downloadTemplate(templateURL, dstDir string) error {
+	// 下载模板文件包，并暂存为 template.zip (模板文件包应当为zip格式，但可能不叫这个名字)
+	resp, err := http.Get(templateURL)
 	if err != nil {
 		return err
 	}
-	if !sourceFileStat.Mode().IsRegular() {
-		return fmt.Errorf("%s is not a regular file", src)
-	}
-	source, err := os.Open(src)
+	defer resp.Body.Close()
+	zipfile, err := os.Create("template.zip")
 	if err != nil {
 		return err
 	}
-	defer source.Close()
+	defer zipfile.Close()
+	_, err = io.Copy(zipfile, resp.Body)
+	if err != nil {
+		return err
+	}
 
-	destination, err := os.Create(dst)
-	if err != nil {
+	// 解压模板文件包
+	zr, err := zip.OpenReader("template.zip")
+    if err != nil {
+        return err
+    }
+	for _, file := range zr.File {
+		path := filepath.Join(dstDir, file.Name)
+		// 如果是目录，则创建目录，并跳过当前循环，继续处理下一个
+		if file.FileInfo().IsDir() {
+            if err := os.MkdirAll(path, file.Mode()); err != nil {
+                return err
+            }
+            continue
+		}
+
+		// 解压文件到目标文件夹
+        fr, err := file.Open()
+        if err != nil {
+            return err
+        }
+        fw, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR|os.O_TRUNC, file.Mode())
+        if err != nil {
+            return err
+        }
+        _, err = io.Copy(fw, fr)
+        if err != nil {
+            return err
+        }
+		fw.Close()
+        fr.Close()
+	}
+	zr.Close()
+
+	// 删除缓存的模板文件包
+	if err := os.Remove("template.zip"); err != nil {
 		return err
 	}
-	defer destination.Close()
-	
-	_, err = io.Copy(destination, source)
-	return err
+
+	return nil
 }
