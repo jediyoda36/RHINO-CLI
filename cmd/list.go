@@ -88,6 +88,10 @@ var listCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		if len(list.Items) == 0 {
+			fmt.Println("RhinoJob not found in namespace:", namespace)
+			os.Exit(0)
+		}
 		fmt.Printf("%-20s\t%-15s\t%-5s\n", "Name", "Parallelism", "Status")
 		for _, rj := range list.Items {
 			fmt.Printf("%-20v\t%-15v\t%-5v\n", rj.Name, *rj.Spec.Parallelism, rj.Status.JobStatus)
@@ -98,7 +102,7 @@ var listCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(listCmd)
-	listCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "namespace of the rhinojob")
+	listCmd.Flags().StringVarP(&namespace, "namespace", "n", "default", "namespace of the rhinojob")
 	listCmd.Flags().StringVar(&config, "config", "", "kubernetes config path")
 }
 
