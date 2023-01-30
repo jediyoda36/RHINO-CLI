@@ -11,6 +11,7 @@ import (
 	"k8s.io/client-go/util/homedir"
 	"path/filepath"
 	"github.com/spf13/cobra"
+	rhinojob "openrhino.org/operator/api/v1alpha1"
 )
 
 var namespace string
@@ -49,7 +50,7 @@ var listCmd = &cobra.Command{
 			return err
 		}
 		if len(list.Items) == 0 {
-			fmt.Println("RhinoJob not found in namespace:", namespace)
+			fmt.Println("RhinoJob not found in namespace")
 			os.Exit(0)
 		}
 		fmt.Printf("%-20s\t%-15s\t%-5s\n", "Name", "Parallelism", "Status")
@@ -66,7 +67,7 @@ func init() {
 	listCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "kubernetes config path")
 }
 
-func listRhinoJob(client dynamic.Interface, namespace string) (*RhinoJobList, error) {
+func listRhinoJob(client dynamic.Interface, namespace string) (*rhinojob.RhinoJobList, error) {
 	list, err := client.Resource(RhinoJobGVR).Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 			return nil, err
@@ -75,7 +76,7 @@ func listRhinoJob(client dynamic.Interface, namespace string) (*RhinoJobList, er
 	if err != nil {
 			return nil, err
 	}
-	var rjList RhinoJobList
+	var rjList rhinojob.RhinoJobList
 	if err := json.Unmarshal(data, &rjList); err != nil {
 			return nil, err
 	}
