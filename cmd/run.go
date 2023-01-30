@@ -25,6 +25,8 @@ var dataPath string
 var dataServer string
 var namespace string
 var config string
+var kubeconfig string
+var funcName string
 var gvr = schema.GroupVersionResource{Group: "openrhino.org", Version: "v1alpha1", Resource: "rhinojobs"}
 
 type RhinoJobSpec struct {
@@ -75,7 +77,7 @@ var runCmd = &cobra.Command{
 			cmd.Help()
 			os.Exit(0)
 		}
-		var kubeconfig string
+		funcName = getFuncName(args[0])
 		if home := homedir.HomeDir(); home != "" {
 			kubeconfig = filepath.Join(home, ".kube", "config")
 		} else {
@@ -94,12 +96,12 @@ var runCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}	
-		run, err := runRhinoJob(dynamicClient, namespace, args)
+		_, err = runRhinoJob(dynamicClient, namespace, args)
 		if err != nil {
 			fmt.Println(err.Error())
 			os.Exit(0)
 		}
-		fmt.Println(run)
+		fmt.Println("RhinoJob", funcName, "created")
 		return nil
 	},
 }
@@ -116,7 +118,6 @@ func init() {
 }
 
 func printYAML(args []string) (yamlFile string) {
-	funcName := getFuncName(args[0])
 	yamlFile = `apiVersion: openrhino.org/v1alpha1
 kind: RhinoJob
 metadata:
