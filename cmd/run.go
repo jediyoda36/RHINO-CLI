@@ -11,10 +11,10 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	rhinojob "openrhino.org/operator/api/v1alpha1"
 )
 
 var imageName string
@@ -23,47 +23,7 @@ var parallel int
 var execTime int
 var dataPath string
 var dataServer string
-var namespace string
-var config string
-var kubeconfig string
 var funcName string
-var gvr = schema.GroupVersionResource{Group: "openrhino.org", Version: "v1alpha1", Resource: "rhinojobs"}
-
-type RhinoJobSpec struct {
-	Image string `json:"image"`
-	Parallelism *int32 `json:"parallelism,omitempty"`
-	TTL        *int32   `json:"ttl,omitempty"`
-	AppExec    string   `json:"appExec"`
-	AppArgs    []string `json:"appArgs,omitempty"`
-	DataServer string   `json:"dataServer,omitempty"`
-	DataPath   string   `json:"dataPath,omitempty"`
-}
-
-type RhinoJobStatus struct {
-	JobStatus JobStatus `json:"jobStatus"`
-}
-type JobStatus string
-
-const (
-	Pending   JobStatus = "Pending"
-	Running   JobStatus = "Running"
-	Failed    JobStatus = "Failed"
-	Completed JobStatus = "Completed"
-)
-
-type RhinoJob struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   RhinoJobSpec   `json:"spec,omitempty"`
-	Status RhinoJobStatus `json:"status,omitempty"`
-}
-
-type RhinoJobList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []RhinoJob `json:"items"`
-}
 
 var runCmd = &cobra.Command{
 	Use:   "run [image]",
@@ -73,21 +33,23 @@ var runCmd = &cobra.Command{
   rhino run foo/matmul:v2.1 --np 4 -- arg1 arg2 
   rhino run mpi/testbench -n 32 -t 800 --server 10.0.0.7 --dir /mnt -- --in=/data/file --out=/data/out`,
 	RunE: func(cmd *cobra.Command, args []string) error{
+		var configPath string
 		if len(args) == 0 {
 			cmd.Help()
 			os.Exit(0)
 		}
 		funcName = getFuncName(args[0])
-		if home := homedir.HomeDir(); home != "" {
-			kubeconfig = filepath.Join(home, ".kube", "config")
-		} else {
-			if len(config) == 0 {
+		if len(kubeconfig) == 0 {
+			if home := homedir.HomeDir(); home != "" {
+				configPath = filepath.Join(home, ".kube", "config")
+			} else {
 				fmt.Println("Error: kubeconfig file not found, please use --config to specify the absolute path")
 				os.Exit(0)
 			}
-			kubeconfig = config
-		}
-		config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+		} else {
+			configPath = kubeconfig
+		}		
+		config, err := clientcmd.BuildConfigFromFlags("", configPath)
 		if err != nil {
 			return err
 		}
@@ -114,7 +76,7 @@ func init() {
 	runCmd.Flags().IntVarP(&parallel, "np", "n", 1, "mpi processes")
 	runCmd.Flags().IntVarP(&execTime, "ttl", "t", 600, "estimated execution time(s)")
 	runCmd.Flags().StringVar(&namespace, "namespace", "default", "namespace of the rhinojob")
-	runCmd.Flags().StringVar(&config, "config", "", "kubernetes config path")
+	runCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "kubernetes config path")
 }
 
 func printYAML(args []string) (yamlFile string) {
@@ -156,14 +118,14 @@ spec:
 	return yamlFile
 }
 
-func runRhinoJob(client dynamic.Interface, namespace string, args []string) (*RhinoJob, error) {
+func runRhinoJob(client dynamic.Interface, namespace string, args []string) (*rhinojob.RhinoJobList, error) {
 	decoder := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 	obj := &unstructured.Unstructured{}
 	if _, _, err := decoder.Decode([]byte(printYAML(args)), nil, obj); err != nil {
 		return nil, err
 	}
 
-	create, err := client.Resource(gvr).Namespace(namespace).Create(context.TODO(), obj, metav1.CreateOptions{})
+	create, err := client.Resource(RhinoJobGVR).Namespace(namespace).Create(context.TODO(), obj, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +133,7 @@ func runRhinoJob(client dynamic.Interface, namespace string, args []string) (*Rh
 	if err != nil {
 		return nil, err
 	}
-	var rj RhinoJob
+	var rj rhinojob.RhinoJobList
 	if err := json.Unmarshal(data, &rj); err != nil {
 		return nil, err
 	}
