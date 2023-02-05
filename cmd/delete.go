@@ -1,40 +1,62 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-
-*/
 package cmd
 
 import (
+	"os"
 	"fmt"
-
+	"context"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
+	"path/filepath"
 	"github.com/spf13/cobra"
 )
 
-// deleteCmd represents the delete command
-var deleteCmd = &cobra.Command{
-	Use:   "delete",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+var name string
+var namespaced string
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("delete called")
+var deleteCmd = &cobra.Command{
+	Use:   "delete [name]",
+	Short: "Delete rhino job and rhino function",
+	Long: "\nDelete rhino job and rhino function",
+	RunE: func(cmd *cobra.Command, args []string) error{
+		if len(args) == 0 {
+			return fmt.Errorf("[name] cannot be empty")
+		}
+		name = args[0]
+		var configPath string
+		if len(kubeconfig) == 0 {
+			if home := homedir.HomeDir(); home != "" {
+				configPath = filepath.Join(home, ".kube", "config")
+			} else {
+				fmt.Println("Error: kubeconfig file not found, please use --config to specify the absolute path")
+				os.Exit(0)
+			}
+		} else {
+			configPath = kubeconfig
+		}		
+		config, err := clientcmd.BuildConfigFromFlags("", configPath)
+		if err != nil {
+			return err
+		}
+	
+		dynamicClient, err := dynamic.NewForConfig(config)
+		if err != nil {
+			return err
+		}
+	
+		err = dynamicClient.Resource(RhinoJobGVR).Namespace(namespaced).Delete(context.TODO(), name, metav1.DeleteOptions{})
+		if err != nil {
+			fmt.Println("Error:", err.Error())
+			os.Exit(0)
+		}
+		fmt.Println("RhinoJob " + name + " deleted")
+		return nil	
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(deleteCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// deleteCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// deleteCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	deleteCmd.Flags().StringVarP(&namespaced, "namespace", "n", "default", "namespace of the rhinojob")
+	deleteCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "kubernetes config path")
 }
