@@ -7,7 +7,7 @@ require (
 	github.com/stretchr/testify v1.8.1
 	k8s.io/apimachinery v0.26.1
 	k8s.io/client-go v0.26.1
-	github.com/OpenRHINO/RHINO-Operator v1.0.0
+	github.com/OpenRHINO/RHINO-Operator v0.1.0
 )
 
 require (
@@ -41,5 +41,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-replace github.com/OpenRHINO/RHINO-Operator => ../RHINO-Operator
