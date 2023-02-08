@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     MPI_CHECK(MPI_Init(&argc, &argv));
 
     /* Get the number of processes, current rank and hostname */
-    int world_size, world_rank, name_len;;
+    int world_size, world_rank, name_len;
     char processor_name[MPI_MAX_PROCESSOR_NAME];
 
     MPI_CHECK(MPI_Comm_size(MPI_COMM_WORLD, &world_size));
