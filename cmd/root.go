@@ -21,7 +21,5 @@ func Execute() {
 	}
 }
 
-func init() {
-}
 
 
