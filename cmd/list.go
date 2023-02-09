@@ -1,26 +1,25 @@
 package cmd
 
 import (
-	"os"
-	"fmt"
 	"context"
 	"encoding/json"
+	"fmt"
+	rhinojob "github.com/OpenRHINO/RHINO-Operator/api/v1alpha1"
+	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+	"os"
 	"path/filepath"
-	"github.com/spf13/cobra"
-	rhinojob "github.com/OpenRHINO/RHINO-Operator/api/v1alpha1"
 )
 
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all rhino jobs",
-	Long: "\nList all rhino jobs",
+	Long:  "\nList all rhino jobs",
 	Example: `  rhino list
   rhino list --namespace user_func`,
-	RunE: func(cmd *cobra.Command, args []string) error{
+	RunE: func(cmd *cobra.Command, args []string) error {
 		var configPath string
 		if len(kubeconfig) == 0 {
 			if home := homedir.HomeDir(); home != "" {
@@ -33,26 +32,12 @@ var listCmd = &cobra.Command{
 			configPath = kubeconfig
 		}
 
-		// We use 2 kinds of config here.
-		// The dynamicClient need to be constructed with rest.Config.
-		// On the other hand, we need to use api.Config or ClientConfig to
-		// read the context info and current namespace from the kubeconfig file.
-		// The rest.Config does not include the namespace.
-		config, err := clientcmd.BuildConfigFromFlags("", configPath)
-		if err != nil {
-			return err
-		}
-		dynamicClient, err := dynamic.NewForConfig(config)
+		dynamicClient, currentNamespace, err := buildFromKubeconfig(configPath)
 		if err != nil {
 			return err
 		}
 		if namespace == "" {
-			cmdapiConfig, err := clientcmd.LoadFromFile(configPath)
-			if err != nil {
-				return err
-			}
-			context := cmdapiConfig.Contexts[cmdapiConfig.CurrentContext]
-			namespace = context.Namespace
+			namespace = *currentNamespace
 		}
 
 		list, err := listRhinoJob(dynamicClient)

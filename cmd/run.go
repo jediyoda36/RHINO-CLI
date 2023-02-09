@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
@@ -17,8 +16,6 @@ import (
 	rhinojob "github.com/OpenRHINO/RHINO-Operator/api/v1alpha1"
 )
 
-var imageName string
-var execArgs []string
 var parallel int
 var execTime int
 var dataPath string
@@ -49,16 +46,15 @@ var runCmd = &cobra.Command{
 		} else {
 			configPath = kubeconfig
 		}		
-		config, err := clientcmd.BuildConfigFromFlags("", configPath)
+
+		dynamicClient, currentNamespace, err := buildFromKubeconfig(configPath)
 		if err != nil {
 			return err
 		}
-	
-		dynamicClient, err := dynamic.NewForConfig(config)
-		if err != nil {
-			return err
-		}	
-		_, err = runRhinoJob(dynamicClient, namespace, args)
+		if namespace == "" {
+			namespace = *currentNamespace
+		}
+		_, err = runRhinoJob(dynamicClient, args)
 		if err != nil {
 			fmt.Println(err.Error())
 			os.Exit(0)
@@ -75,7 +71,7 @@ func init() {
 	runCmd.MarkFlagsRequiredTogether("server", "dir")
 	runCmd.Flags().IntVarP(&parallel, "np", "n", 1, "mpi processes")
 	runCmd.Flags().IntVarP(&execTime, "ttl", "t", 600, "estimated execution time(s)")
-	runCmd.Flags().StringVar(&namespace, "namespace", "default", "namespace of the rhinojob")
+	runCmd.Flags().StringVar(&namespace, "namespace", "", "namespace of the rhinojob")
 	runCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "kubernetes config path")
 }
 
@@ -118,18 +114,18 @@ spec:
 	return yamlFile
 }
 
-func runRhinoJob(client dynamic.Interface, namespace string, args []string) (*rhinojob.RhinoJobList, error) {
+func runRhinoJob(client dynamic.Interface, args []string) (*rhinojob.RhinoJobList, error) {
 	decoder := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 	obj := &unstructured.Unstructured{}
 	if _, _, err := decoder.Decode([]byte(printYAML(args)), nil, obj); err != nil {
 		return nil, err
 	}
+	createdRhinoJob, err := client.Resource(RhinoJobGVR).Namespace(namespace).Create(context.TODO(), obj, metav1.CreateOptions{})
 
-	create, err := client.Resource(RhinoJobGVR).Namespace(namespace).Create(context.TODO(), obj, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
-	data, err := create.MarshalJSON()
+	data, err := createdRhinoJob.MarshalJSON()
 	if err != nil {
 		return nil, err
 	}

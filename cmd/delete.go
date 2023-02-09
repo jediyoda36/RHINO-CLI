@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"path/filepath"
 	"github.com/spf13/cobra"
@@ -34,14 +32,13 @@ var deleteCmd = &cobra.Command{
 		} else {
 			configPath = kubeconfig
 		}
-		config, err := clientcmd.BuildConfigFromFlags("", configPath)
+
+		dynamicClient, currentNamespace, err := buildFromKubeconfig(configPath)
 		if err != nil {
 			return err
 		}
-
-		dynamicClient, err := dynamic.NewForConfig(config)
-		if err != nil {
-			return err
+		if namespace == "" {
+			namespace = *currentNamespace
 		}
 
 		err = dynamicClient.Resource(RhinoJobGVR).Namespace(namespace).Delete(context.TODO(), rhinojobName, metav1.DeleteOptions{})
@@ -56,6 +53,6 @@ var deleteCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(deleteCmd)
-	deleteCmd.Flags().StringVarP(&namespace, "namespace", "n", "default", "namespace of the rhinojob")
+	deleteCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "namespace of the rhinojob")
 	deleteCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "kubernetes config path")
 }
