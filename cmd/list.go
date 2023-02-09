@@ -34,18 +34,31 @@ var listCmd = &cobra.Command{
 			}
 		} else {
 			configPath = kubeconfig
-		}		
+		}
+
+		// We use 2 kinds of config here.
+		// The dynamicClient need to be constructed with rest.Config.
+		// On the other hand, we need to use api.Config or ClientConfig to
+		// read the context info and current namespace from the kubeconfig file.
+		// The rest.Config does not include the namespace.
 		config, err := clientcmd.BuildConfigFromFlags("", configPath)
 		if err != nil {
 			return err
 		}
-	
 		dynamicClient, err := dynamic.NewForConfig(config)
 		if err != nil {
 			return err
 		}
-	
-		list, err := listRhinoJob(dynamicClient, namespace)
+		if namespace == "" {
+			cmdapiConfig, err := clientcmd.LoadFromFile(configPath)
+			if err != nil {
+				return err
+			}
+			context := cmdapiConfig.Contexts[cmdapiConfig.CurrentContext]
+			namespace = context.Namespace
+		}
+
+		list, err := listRhinoJob(dynamicClient)
 		if err != nil {
 			return err
 		}
@@ -57,7 +70,7 @@ var listCmd = &cobra.Command{
 		for _, rj := range list.Items {
 			fmt.Printf("%-20v\t%-15v\t%-5v\n", rj.Name, *rj.Spec.Parallelism, rj.Status.JobStatus)
 		}
-		return nil	
+		return nil
 	},
 }
 
@@ -67,18 +80,18 @@ func init() {
 	listCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "kubernetes config path")
 }
 
-func listRhinoJob(client dynamic.Interface, namespace string) (*rhinojob.RhinoJobList, error) {
+func listRhinoJob(client dynamic.Interface) (*rhinojob.RhinoJobList, error) {
 	list, err := client.Resource(RhinoJobGVR).Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-			return nil, err
+		return nil, err
 	}
 	data, err := list.MarshalJSON()
 	if err != nil {
-			return nil, err
+		return nil, err
 	}
 	var rjList rhinojob.RhinoJobList
 	if err := json.Unmarshal(data, &rjList); err != nil {
-			return nil, err
+		return nil, err
 	}
 	return &rjList, nil
 }
