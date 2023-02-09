@@ -100,9 +100,9 @@ spec:
   parallelism: `
   	yamlFile += strconv.Itoa(parallel) + ` 
   appExec: "./` 
-  	yamlFile += funcName
+  	yamlFile += funcName + `"`
 	if len(args) > 1 {
-		yamlFile += `"
+		yamlFile += `
   appArgs: [`
 		for i := 1; i < len(args); i++ {
 			yamlFile += `"` + args[i] + `", `
