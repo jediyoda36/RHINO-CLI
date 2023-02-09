@@ -11,6 +11,8 @@ var rootCmd = &cobra.Command{
 	Use:   "rhino",
 	Short: "\nRHINO-CLI - Manage your OpenRHINO functions and jobs",
 }
+var namespace string
+var kubeconfig string
 
 func Execute() {
 	err := rootCmd.Execute()

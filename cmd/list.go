@@ -14,9 +14,6 @@ import (
 	rhinojob "github.com/OpenRHINO/RHINO-Operator/api/v1alpha1"
 )
 
-var namespace string
-var kubeconfig string
-
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all rhino jobs",

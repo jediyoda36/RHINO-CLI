@@ -12,8 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var name string
-var namespaced string
+var rhinojobName string
 
 var deleteCmd = &cobra.Command{
 	Use:   "delete [name]",
@@ -23,7 +22,7 @@ var deleteCmd = &cobra.Command{
 		if len(args) == 0 {
 			return fmt.Errorf("[name] cannot be empty")
 		}
-		name = args[0]
+		rhinojobName = args[0]
 		var configPath string
 		if len(kubeconfig) == 0 {
 			if home := homedir.HomeDir(); home != "" {
@@ -34,29 +33,29 @@ var deleteCmd = &cobra.Command{
 			}
 		} else {
 			configPath = kubeconfig
-		}		
+		}
 		config, err := clientcmd.BuildConfigFromFlags("", configPath)
 		if err != nil {
 			return err
 		}
-	
+
 		dynamicClient, err := dynamic.NewForConfig(config)
 		if err != nil {
 			return err
 		}
-	
-		err = dynamicClient.Resource(RhinoJobGVR).Namespace(namespaced).Delete(context.TODO(), name, metav1.DeleteOptions{})
+
+		err = dynamicClient.Resource(RhinoJobGVR).Namespace(namespace).Delete(context.TODO(), rhinojobName, metav1.DeleteOptions{})
 		if err != nil {
 			fmt.Println("Error:", err.Error())
 			os.Exit(0)
 		}
-		fmt.Println("RhinoJob " + name + " deleted")
-		return nil	
+		fmt.Println("RhinoJob " + rhinojobName + " deleted")
+		return nil
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(deleteCmd)
-	deleteCmd.Flags().StringVarP(&namespaced, "namespace", "n", "default", "namespace of the rhinojob")
+	deleteCmd.Flags().StringVarP(&namespace, "namespace", "n", "default", "namespace of the rhinojob")
 	deleteCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "kubernetes config path")
 }
