@@ -17,16 +17,14 @@ var createCmd = &cobra.Command{
 	Use:     "create",
 	Short: 	 "Create a new MPI function/project",
 	Long: 	 "\nCreate a new MPI function/project",
-	Example: `  C function:   rhino create func_name --lang c
-  C++ function: rhino create func_name -l cpp
-  MPI project:  rhino create proj_name --lang dockerfile`,
+	Example: `  C++ function: rhino create func_name -l cpp`,
   	Args: 	 argsCheck,
   	RunE:    runCreate,
 }
 
 func init() {
 	rootCmd.AddCommand(createCmd)
-	createCmd.Flags().StringVarP(&language, "lang", "l", "", "language template to use")
+	createCmd.Flags().StringVarP(&language, "lang", "l", "cpp", "language template to use")
 }
 
 func argsCheck(cmd *cobra.Command, args []string) error {
@@ -44,8 +42,8 @@ func argsCheck(cmd *cobra.Command, args []string) error {
 		fmt.Println("Error: name can only contain a~z, 0~9 and _")
 		os.Exit(0)
 	}
-	if language != "c" && language != "cpp" && language != "dockerfile" {
-		return fmt.Errorf("only support c, cpp and dockerfile")
+	if language != "cpp" {
+		return fmt.Errorf("only supports cpp in this version")
 	}
 	return nil
 }

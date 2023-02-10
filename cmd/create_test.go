@@ -17,7 +17,7 @@ func TestCreateFunc(t *testing.T) {
 	os.Chdir("..")
 
 	testFuncName := "test-create-func-c"
-	rootCmd.SetArgs([]string{"create", testFuncName, "--lang", "c"})
+	rootCmd.SetArgs([]string{"create", testFuncName})
 	err := rootCmd.Execute()
 	assert.Equal(t, nil, err, "test create func failed: %s", errorMessage(err))
 
