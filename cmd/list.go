@@ -1,29 +1,25 @@
 package cmd
 
 import (
-	"os"
-	"fmt"
 	"context"
 	"encoding/json"
+	"fmt"
+	rhinojob "github.com/OpenRHINO/RHINO-Operator/api/v1alpha1"
+	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+	"os"
 	"path/filepath"
-	"github.com/spf13/cobra"
-	rhinojob "github.com/OpenRHINO/RHINO-Operator/api/v1alpha1"
 )
-
-var namespace string
-var kubeconfig string
 
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all rhino jobs",
-	Long: "\nList all rhino jobs",
+	Long:  "\nList all rhino jobs",
 	Example: `  rhino list
   rhino list --namespace user_func`,
-	RunE: func(cmd *cobra.Command, args []string) error{
+	RunE: func(cmd *cobra.Command, args []string) error {
 		var configPath string
 		if len(kubeconfig) == 0 {
 			if home := homedir.HomeDir(); home != "" {
@@ -34,18 +30,17 @@ var listCmd = &cobra.Command{
 			}
 		} else {
 			configPath = kubeconfig
-		}		
-		config, err := clientcmd.BuildConfigFromFlags("", configPath)
+		}
+
+		dynamicClient, currentNamespace, err := buildFromKubeconfig(configPath)
 		if err != nil {
 			return err
 		}
-	
-		dynamicClient, err := dynamic.NewForConfig(config)
-		if err != nil {
-			return err
+		if namespace == "" {
+			namespace = *currentNamespace
 		}
-	
-		list, err := listRhinoJob(dynamicClient, namespace)
+
+		list, err := listRhinoJob(dynamicClient)
 		if err != nil {
 			return err
 		}
@@ -57,7 +52,7 @@ var listCmd = &cobra.Command{
 		for _, rj := range list.Items {
 			fmt.Printf("%-20v\t%-15v\t%-5v\n", rj.Name, *rj.Spec.Parallelism, rj.Status.JobStatus)
 		}
-		return nil	
+		return nil
 	},
 }
 
@@ -67,18 +62,18 @@ func init() {
 	listCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "kubernetes config path")
 }
 
-func listRhinoJob(client dynamic.Interface, namespace string) (*rhinojob.RhinoJobList, error) {
+func listRhinoJob(client dynamic.Interface) (*rhinojob.RhinoJobList, error) {
 	list, err := client.Resource(RhinoJobGVR).Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-			return nil, err
+		return nil, err
 	}
 	data, err := list.MarshalJSON()
 	if err != nil {
-			return nil, err
+		return nil, err
 	}
 	var rjList rhinojob.RhinoJobList
 	if err := json.Unmarshal(data, &rjList); err != nil {
-			return nil, err
+		return nil, err
 	}
 	return &rjList, nil
 }
