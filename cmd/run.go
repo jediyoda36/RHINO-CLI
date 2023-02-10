@@ -66,7 +66,7 @@ var runCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(runCmd)
-	runCmd.Flags().StringVar(&dataServer, "server", "", "IP address of a NFS server")
+	runCmd.Flags().StringVar(&dataServer, "server", "", "IP address of an NFS server")
 	runCmd.Flags().StringVar(&dataPath, "dir", "", "a directory in the NFS server, to store data and shared with all the MPI processes")
 	runCmd.MarkFlagsRequiredTogether("server", "dir")
 	runCmd.Flags().IntVarP(&parallel, "np", "n", 1, "the number of MPI processes")
