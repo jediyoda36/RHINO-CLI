@@ -15,8 +15,8 @@ import (
 
 var listCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List all rhino jobs",
-	Long:  "\nList all rhino jobs",
+	Short: "List RHINO jobs",
+	Long:  "\nList all the RHINO jobs in your current namespace or the namespace specified",
 	Example: `  rhino list
   rhino list --namespace user_func`,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -45,7 +45,7 @@ var listCmd = &cobra.Command{
 			return err
 		}
 		if len(list.Items) == 0 {
-			fmt.Println("RhinoJob not found in namespace")
+			fmt.Println("No RhinoJobs found in the namespace")
 			os.Exit(0)
 		}
 		fmt.Printf("%-20s\t%-15s\t%-5s\n", "Name", "Parallelism", "Status")
@@ -58,8 +58,8 @@ var listCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(listCmd)
-	listCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "namespace of the rhinojob")
-	listCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "kubernetes config path")
+	listCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "the namespace to list RHINO jobs")
+	listCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "the path of the kubeconfig file")
 }
 
 func listRhinoJob(client dynamic.Interface) (*rhinojob.RhinoJobList, error) {

@@ -15,8 +15,8 @@ import (
 var language string
 var createCmd = &cobra.Command{
 	Use:     "create",
-	Short: 	 "Create a new mpi function/project",
-	Long: 	 "\nCreate a new mpi function/project",
+	Short: 	 "Create a new MPI function/project",
+	Long: 	 "\nCreate a new MPI function/project",
 	Example: `  C function:   rhino create func_name --lang c
   C++ function: rhino create func_name -l cpp
   MPI project:  rhino create proj_name --lang dockerfile`,
@@ -57,7 +57,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 		os.Exit(0)
 	}
 	if err := os.Mkdir(dirName, 0700); err != nil {
-		fmt.Println("Error: folder", dirName, "could not create")
+		fmt.Println("Error: folder", dirName, "could not be created")
 		os.Exit(0)
 	}
 	
