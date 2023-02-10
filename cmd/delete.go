@@ -14,8 +14,8 @@ var rhinojobName string
 
 var deleteCmd = &cobra.Command{
 	Use:   "delete [name]",
-	Short: "Delete rhino job and rhino function",
-	Long: "\nDelete rhino job and rhino function",
+	Short: "Delete a RHINO job by name",
+	Long: "\nDelete a RHINO job by name",
 	RunE: func(cmd *cobra.Command, args []string) error{
 		if len(args) == 0 {
 			return fmt.Errorf("[name] cannot be empty")
@@ -53,6 +53,6 @@ var deleteCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(deleteCmd)
-	deleteCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "namespace of the rhinojob")
-	deleteCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "kubernetes config path")
+	deleteCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "the namespace of the RHINO job")
+	deleteCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "the path of the kubeconfig file")
 }

@@ -15,8 +15,8 @@ var path string
 
 var buildCmd = &cobra.Command{
 	Use:   "build",
-	Short: "Build MPI function/project",
-	Long: "\nBuild MPI function/project",
+	Short: "Build the MPI function/project",
+	Long: "\nBuild the MPI function/project into a docker image",
 	Example: `  rhino build ./hello.cpp --image foo/hello:v1.0
   rhino build /src/testbench -i bar/mpibench:v2.1`,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -65,7 +65,7 @@ func builder(image string, path string) error {
 		} else if suffix == ".cpp"{
 			compile = "mpic++"
 		} else {
-			return fmt.Errorf("only support c and cpp file")
+			return fmt.Errorf("only support programs written in c or cpp")
 		}
 
 		execArgs = []string{

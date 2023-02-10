@@ -24,8 +24,8 @@ var funcName string
 
 var runCmd = &cobra.Command{
 	Use:   "run [image]",
-	Short: "Submit and run rhino job",
-	Long: "\nSubmit and run rhino job",
+	Short: "Submit and run a RHINO job",
+	Long: "\nSubmit an MPI function/project and run it as a RHINO job",
 	Example: `  rhino run hello:v1.0 --namespace user_space
   rhino run foo/matmul:v2.1 --np 4 -- arg1 arg2 
   rhino run mpi/testbench -n 32 -t 800 --server 10.0.0.7 --dir /mnt -- --in=/data/file --out=/data/out`,
@@ -66,13 +66,13 @@ var runCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(runCmd)
-	runCmd.Flags().StringVar(&dataServer, "server", "", "NFS server ip")
-	runCmd.Flags().StringVar(&dataPath, "dir", "", "shared directory in NFS server")
+	runCmd.Flags().StringVar(&dataServer, "server", "", "IP address of a NFS server")
+	runCmd.Flags().StringVar(&dataPath, "dir", "", "a directory in the NFS server, to store data and shared with all the MPI processes")
 	runCmd.MarkFlagsRequiredTogether("server", "dir")
-	runCmd.Flags().IntVarP(&parallel, "np", "n", 1, "mpi processes")
-	runCmd.Flags().IntVarP(&execTime, "ttl", "t", 600, "estimated execution time(s)")
-	runCmd.Flags().StringVar(&namespace, "namespace", "", "namespace of the rhinojob")
-	runCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "kubernetes config path")
+	runCmd.Flags().IntVarP(&parallel, "np", "n", 1, "the number of MPI processes")
+	runCmd.Flags().IntVarP(&execTime, "ttl", "t", 600, "Time To Live (seconds). The RHINO job will be deleted after this time, whether it is completed or not.")
+	runCmd.Flags().StringVar(&namespace, "namespace", "", "the namespace of the RHINO job")
+	runCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "the path of the kubeconfig file")
 }
 
 func printYAML(args []string) (yamlFile string) {
