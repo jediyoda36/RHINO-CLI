@@ -89,7 +89,7 @@ func execute(commandName string, params []string) (string, error) {
     cmd := exec.Command(commandName, params...)
     var out bytes.Buffer
     cmd.Stdout = &out
-    cmd.Stderr = os.Stderr
+    cmd.Stderr = &out
     err := cmd.Start()
     if err != nil {
         return "", err
