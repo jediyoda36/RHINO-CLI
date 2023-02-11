@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -9,6 +10,14 @@ import (
 
 const templateFuncFolerName = "templates/func"
 
+// check if the error is reported when the --lang arg is set incorrectly
+func TestCreateLangErr(t *testing.T) {
+	testFuncName := "test-create-func-c"
+	rootCmd.SetArgs([]string{"create", testFuncName, "--lang", "c"})
+	err := rootCmd.Execute()
+	assert.Equal(t, fmt.Errorf("only supports cpp in this version"), err, "test create func failed: the expected error not be reported")
+}
+
 // check if the template downloaded from github is
 // the same as the template already in `OpenRhino-CLI/templates`
 func TestCreateFunc(t *testing.T) {
@@ -16,8 +25,8 @@ func TestCreateFunc(t *testing.T) {
 	// without this operation, contents downloaded from github will be saved in `cmd` directory
 	os.Chdir("..")
 
-	testFuncName := "test-create-func-c"
-	rootCmd.SetArgs([]string{"create", testFuncName, "--lang", "c"})
+	testFuncName := "test-create-func-cpp"
+	rootCmd.SetArgs([]string{"create", testFuncName, "--lang", "cpp"})
 	err := rootCmd.Execute()
 	assert.Equal(t, nil, err, "test create func failed: %s", errorMessage(err))
 
