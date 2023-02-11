@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,11 +24,15 @@ func TestCreateLangErr(t *testing.T) {
 func TestCreateFunc(t *testing.T) {
 	// change test directory to ${workspaceFolder}
 	// without this operation, contents downloaded from github will be saved in `cmd` directory
-	os.Chdir("..")
+	cwd, err := os.Getwd()
+	assert.Equal(t, nil, err, "test create failed: %s", errorMessage(err))
+	if strings.HasSuffix(cwd, "cmd") {
+		os.Chdir("..")
+	}
 
 	testFuncName := "test-create-func-cpp"
 	rootCmd.SetArgs([]string{"create", testFuncName, "--lang", "cpp"})
-	err := rootCmd.Execute()
+	err = rootCmd.Execute()
 	assert.Equal(t, nil, err, "test create func failed: %s", errorMessage(err))
 
 	// check if the folder has been downloaded and unzipped successfully
