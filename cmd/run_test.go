@@ -53,6 +53,9 @@ func TestRunSingleJob(t *testing.T) {
 	// delete rhinojob created just now
 	execute("kubectl", []string{"delete", "rhinojob", testRhinoJobName})
 
+	// delete the image built just now
+	execute("docker", []string{"rmi", testFuncImageName})
+
 	// remove template folder
 	os.Chdir("..")
 	os.RemoveAll(testFuncName)
