@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const testFuncRunNamespace = "test-func-cpp-ns"
+
 func TestRunSingleJob(t *testing.T) {
 	// change work directory to ${workspaceFolder}
 	cwd, err := os.Getwd()
@@ -30,13 +32,16 @@ func TestRunSingleJob(t *testing.T) {
 	err = rootCmd.Execute()
 	assert.Equal(t, nil, err, "preparatory work build failed: %s", errorMessage(err))
 
+	// before test `run` command, create a test namespace
+	execute("kubectl", []string{"create", "namespace", testFuncRunNamespace})
+
 	// test run command
-	rootCmd.SetArgs([]string{"run", testFuncImageName})
+	rootCmd.SetArgs([]string{"run", testFuncImageName, "--namespace", testFuncRunNamespace})
 	err = rootCmd.Execute()
 	assert.Equal(t, nil, err, "test run failed: %s", errorMessage(err))
 
 	// use `kubectl get rhinojob` to check whether rhinojob has been created
-	cmdOutput, err := execute("kubectl", []string{"get", "rhinojob"})
+	cmdOutput, err := execute("kubectl", []string{"get", "rhinojob", "--namespace", testFuncRunNamespace})
 	assert.Equal(t, nil, err, "test run failed: %s", errorMessage(err))
 
 	cmdOutputLines := strings.Split(cmdOutput, "\n")
@@ -50,8 +55,9 @@ func TestRunSingleJob(t *testing.T) {
 	}
 	assert.Equal(t, true, foundTestRhinoJob, "test run failed: rhinojob not found")
 
-	// delete rhinojob created just now
-	execute("kubectl", []string{"delete", "rhinojob", testRhinoJobName})
+	// delete test namespace and rhinojob created just now
+	execute("kubectl", []string{"delete", "rhinojob", testRhinoJobName, "-n", testFuncRunNamespace})
+	execute("kubectl", []string{"delete", "namespace", testFuncRunNamespace})
 
 	// delete the image built just now
 	execute("docker", []string{"rmi", testFuncImageName})

@@ -31,8 +31,10 @@ func TestDeleteSingleJob(t *testing.T) {
 	err = rootCmd.Execute()
 	assert.Equal(t, nil, err, "preparatory work build failed: %s", errorMessage(err))
 
+	// before exec `run` command, create a test namespace
+	execute("kubectl", []string{"create", "namespace", testFuncRunNamespace})
 	testRhinoJobName := "rhinojob-" + testFuncName
-	rootCmd.SetArgs([]string{"run", testFuncImageName})
+	rootCmd.SetArgs([]string{"run", testFuncImageName, "--namespace", testFuncRunNamespace})
 	err = rootCmd.Execute()
 	assert.Equal(t, nil, err, "preparatory work run failed: %s", errorMessage(err))
 
@@ -42,16 +44,17 @@ func TestDeleteSingleJob(t *testing.T) {
 	assert.Equal(t, nil, err, "test delete failed: %s", errorMessage(err))
 
 	// check if the rhinojob created just now is deleted successfully
-	actualCmdOutput, err := execute("kubectl", []string{"get", "rhinojob"})
+	actualCmdOutput, err := execute("kubectl", []string{"get", "rhinojob", "-n", testFuncRunNamespace})
 	assert.Equal(t, nil, err, "test delete failed: %s", errorMessage(err))
 
-	expetedCmdOutput := "No resources found in default namespace.\n"
+	expetedCmdOutput := "No resources found in test-func-cpp-ns namespace.\n"
 	assert.Equal(t, expetedCmdOutput, actualCmdOutput, "test delete failed:\n"+
 		"expected kubectl output: %s\nactual kubectl output: %s\n",
 		expetedCmdOutput, actualCmdOutput)
 
-	// delete rhinojob created just now
-	execute("kubectl", []string{"delete", "rhinojob", testRhinoJobName})
+	// delete test namespace and rhinojob created just now
+	execute("kubectl", []string{"delete", "rhinojob", testRhinoJobName, "-n", testFuncRunNamespace})
+	execute("kubectl", []string{"delete", "namespace", testFuncRunNamespace})
 
 	// delete the image built just now
 	execute("docker", []string{"rmi", testFuncImageName})

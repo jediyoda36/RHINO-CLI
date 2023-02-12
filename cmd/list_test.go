@@ -32,8 +32,10 @@ func TestListSingleJob(t *testing.T) {
 	err = rootCmd.Execute()
 	assert.Equal(t, nil, err, "preparatory work build failed: %s", errorMessage(err))
 
+	// before exec `run` command, create a test namespace
+	execute("kubectl", []string{"create", "namespace", testFuncRunNamespace})
 	testRhinoJobName := "rhinojob-" + testFuncName
-	rootCmd.SetArgs([]string{"run", testFuncImageName})
+	rootCmd.SetArgs([]string{"run", testFuncImageName, "--namespace", testFuncRunNamespace})
 	err = rootCmd.Execute()
 	assert.Equal(t, nil, err, "preparatory work run failed: %s", errorMessage(err))
 
@@ -47,7 +49,7 @@ func TestListSingleJob(t *testing.T) {
 	assert.Equal(t, nil, err, "test list failed: %s", errorMessage(err))
 
 	os.Stdout = w
-	rootCmd.SetArgs([]string{"list"})
+	rootCmd.SetArgs([]string{"list", "--namespace", testFuncRunNamespace})
 	err = rootCmd.Execute()
 	assert.Equal(t, nil, err, "test list failed: %s", errorMessage(err))
 
@@ -72,8 +74,9 @@ func TestListSingleJob(t *testing.T) {
 	}
 	assert.Equal(t, true, foundRhinoJob, "test list failed: list output does not contain rhinojob created in this test")
 
-	// delete rhinojob created just now
-	execute("kubectl", []string{"delete", "rhinojob", testRhinoJobName})
+	// delete test namespace and rhinojob created just now
+	execute("kubectl", []string{"delete", "rhinojob", testRhinoJobName, "-n", testFuncRunNamespace})
+	execute("kubectl", []string{"delete", "namespace", testFuncRunNamespace})
 
 	// delete the image built just now
 	execute("docker", []string{"rmi", testFuncImageName})
