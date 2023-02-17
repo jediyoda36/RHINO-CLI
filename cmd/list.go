@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+
 	rhinojob "github.com/OpenRHINO/RHINO-Operator/api/v1alpha1"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/util/homedir"
-	"os"
-	"path/filepath"
 )
 
 var listCmd = &cobra.Command{

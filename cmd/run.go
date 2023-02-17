@@ -1,19 +1,20 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-	"strconv"
 	"context"
 	"encoding/json"
+	"fmt"
+	"os"
 	"path/filepath"
+	"strconv"
+
+	rhinojob "github.com/OpenRHINO/RHINO-Operator/api/v1alpha1"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/util/homedir"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	rhinojob "github.com/OpenRHINO/RHINO-Operator/api/v1alpha1"
 )
 
 var parallel int
@@ -25,11 +26,11 @@ var funcName string
 var runCmd = &cobra.Command{
 	Use:   "run [image]",
 	Short: "Submit and run a RHINO job",
-	Long: "\nSubmit an MPI function/project and run it as a RHINO job",
+	Long:  "\nSubmit an MPI function/project and run it as a RHINO job",
 	Example: `  rhino run hello:v1.0 --namespace user_space
   rhino run foo/matmul:v2.1 --np 4 -- arg1 arg2 
   rhino run mpi/testbench -n 32 -t 800 --server 10.0.0.7 --dir /mnt -- --in=/data/file --out=/data/out`,
-	RunE: func(cmd *cobra.Command, args []string) error{
+	RunE: func(cmd *cobra.Command, args []string) error {
 		var configPath string
 		if len(args) == 0 {
 			cmd.Help()
@@ -45,7 +46,7 @@ var runCmd = &cobra.Command{
 			}
 		} else {
 			configPath = kubeconfig
-		}		
+		}
 
 		dynamicClient, currentNamespace, err := buildFromKubeconfig(configPath)
 		if err != nil {
@@ -81,34 +82,34 @@ kind: RhinoJob
 metadata:
   labels:
     app.kubernetes.io/name: rhinojob 
-    app.kubernetes.io/instance: rhinojob-` 
+    app.kubernetes.io/instance: rhinojob-`
 	yamlFile += funcName + `
     app.kubernetes.io/part-of: rhino-operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: rhino-operator
   name: rhinojob-`
-  	yamlFile += funcName +`
+	yamlFile += funcName + `
 spec:
   image: "`
-  	yamlFile += args[0] + `"
+	yamlFile += args[0] + `"
   ttl: `
-  	yamlFile += strconv.Itoa(execTime) + `
+	yamlFile += strconv.Itoa(execTime) + `
   parallelism: `
-  	yamlFile += strconv.Itoa(parallel) + ` 
-  appExec: "./` 
-  	yamlFile += funcName + `"`
+	yamlFile += strconv.Itoa(parallel) + ` 
+  appExec: "./`
+	yamlFile += funcName + `"`
 	if len(args) > 1 {
 		yamlFile += `
   appArgs: [`
 		for i := 1; i < len(args); i++ {
 			yamlFile += `"` + args[i] + `", `
 		}
-		yamlFile += `]`	
-	} 
+		yamlFile += `]`
+	}
 	if len(dataServer) != 0 {
 		yamlFile += `
   dataServer: "` + dataServer + `"`
-  		yamlFile += `
+		yamlFile += `
   dataPath: "` + dataPath + `"`
 	}
 	return yamlFile

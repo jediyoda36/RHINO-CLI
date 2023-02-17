@@ -1,13 +1,14 @@
 package cmd
 
 import (
-	"os"
-	"fmt"
 	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/homedir"
-	"path/filepath"
-	"github.com/spf13/cobra"
 )
 
 var rhinojobName string
@@ -15,8 +16,8 @@ var rhinojobName string
 var deleteCmd = &cobra.Command{
 	Use:   "delete [name]",
 	Short: "Delete a RHINO job by name",
-	Long: "\nDelete a RHINO job by name",
-	RunE: func(cmd *cobra.Command, args []string) error{
+	Long:  "\nDelete a RHINO job by name",
+	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
 			return fmt.Errorf("[name] cannot be empty")
 		}
