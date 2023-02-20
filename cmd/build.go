@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"os"
@@ -76,11 +77,29 @@ func builder(image string, path string) error {
 			"--build-arg", "compile=" + compile,
 			"-f", "./func.dockerfile", ".",
 		}
-		out, err := execute("docker", execArgs)
+
+		cmd := exec.Command("docker", execArgs...)
+		stdout, err := cmd.StdoutPipe()
 		if err != nil {
 			return err
 		}
-		fmt.Printf(out)
+
+		err = cmd.Start()
+		if err != nil {
+			return err
+		}
+
+		scanner := bufio.NewScanner(stdout)
+		scanner.Split(bufio.ScanLines)
+		for scanner.Scan() {
+			cmdOutput := scanner.Text()
+			fmt.Println(cmdOutput)
+		}
+
+		err = cmd.Wait()
+		if err != nil {
+			return err
+		}
 		// TODO: add image cleaner
 	}
 	return nil
