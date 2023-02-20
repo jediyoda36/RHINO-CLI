@@ -70,7 +70,7 @@ func init() {
 	runCmd.Flags().StringVar(&dataServer, "server", "", "IP address of an NFS server")
 	runCmd.Flags().StringVar(&dataPath, "dir", "", "a directory in the NFS server, to store data and shared with all the MPI processes")
 	runCmd.MarkFlagsRequiredTogether("server", "dir")
-	runCmd.Flags().IntVarP(&parallel, "np", "n", 1, "the number of MPI processes")
+	runCmd.Flags().IntVarP(&parallel, "mpi", "m", 1, "the number of MPI processes")
 	runCmd.Flags().IntVarP(&execTime, "ttl", "t", 600, "Time To Live (seconds). The RHINO job will be deleted after this time, whether it is completed or not.")
 	runCmd.Flags().StringVar(&namespace, "namespace", "", "the namespace of the RHINO job")
 	runCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "the path of the kubeconfig file")
