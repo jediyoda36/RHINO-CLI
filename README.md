@@ -29,4 +29,5 @@ To get more information about a specific subcommand, use the following command:
 ```bash
 rhino [subcommand] --help
 ```
-![RHINO-CLI demo](https://user-images.githubusercontent.com/20229719/220432287-e962fcfb-4aaf-4848-a64a-2221de5670c6.mp4)
+## Demo
+[RHINO-CLI demo](https://user-images.githubusercontent.com/20229719/220432287-e962fcfb-4aaf-4848-a64a-2221de5670c6.mp4)
