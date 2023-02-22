@@ -1,4 +1,4 @@
-FROM zhuhe0321/mpich:v2.0 as builder
+FROM openrhino/mpibuilder_base:v0.1.0 as builder
 
 ARG func_name ${func_name}
 ARG file ${file}
@@ -11,7 +11,7 @@ RUN ${compile} ${file} -o ${func_name}
 COPY ldd.sh .
 RUN sh ldd.sh
 
-FROM zhuhe0321/mpirun_base
+FROM openrhino/mpirun_base:v0.1.0
 
 ARG func_name ${func_name}
 COPY --from=builder /app/${func_name}  /app/${func_name}
