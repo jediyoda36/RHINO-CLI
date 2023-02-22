@@ -7,14 +7,14 @@ RHINO-CLI is a command-line interface for OpenRHINO.
 To use RHINO-CLI, run the following command:
 
 ```bash
-rhino [subcommand]
+rhino [command]
 ```
 
-Replace `[subcommand]` with one of the available subcommands listed below.
+Replace `[command]` with one of the available commands listed below.
 
-## Available Subcommands
+## Available Commands
 
-RHINO-CLI provides the following subcommands:
+RHINO-CLI provides the following commands:
 
 - `create`: Create a new MPI function/project
 - `build`: Build an MPI function/project
@@ -24,10 +24,13 @@ RHINO-CLI provides the following subcommands:
 - `help`: Help about any command
 - `completion`: Generate the autocompletion script for the specified shell
 
-To get more information about a specific subcommand, use the following command:
+To get more information about a specific command, use the following command:
 
 ```bash
-rhino [subcommand] --help
+rhino [command] --help
 ```
 ## Demo
-[RHINO-CLI demo](https://user-images.githubusercontent.com/20229719/220432287-e962fcfb-4aaf-4848-a64a-2221de5670c6.mp4)
+[RHINO-CLI demo](https://user-images.githubusercontent.com/20229719/220574704-eb67afd6-ce2c-408d-b708-b660ccfeabc2.mp4)
+
+
+
