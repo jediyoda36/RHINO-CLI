@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 
 	"github.com/spf13/cobra"
 )
@@ -35,12 +34,6 @@ func argsCheck(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("language cannot be empty")
 	} else if len(args) == 0 {
 		return fmt.Errorf("function or project name cannot be empty")
-	}
-	validName := regexp.MustCompile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
-	matchString := validName.MatchString(args[0])
-	if !matchString {
-		fmt.Println("Error: name can only contain a~z, 0~9 and -")
-		os.Exit(0)
 	}
 	if language != "cpp" {
 		return fmt.Errorf("only supports cpp in this version")

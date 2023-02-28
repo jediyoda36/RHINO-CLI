@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -26,6 +27,13 @@ var buildCmd = &cobra.Command{
 		} else if len(args) > 0 && args[0] != "make" {
 			return fmt.Errorf("build command must start with 'make'")
 		}
+
+		validName := regexp.MustCompile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
+		matchString := validName.MatchString(getFuncName(image))
+		if !matchString {
+			return fmt.Errorf("image name can only contain a~z, 0~9 and -")
+		}
+
 		if err := builder(args, image, file); err != nil {
 			fmt.Println("Error:", err.Error())
 			os.Exit(0)
