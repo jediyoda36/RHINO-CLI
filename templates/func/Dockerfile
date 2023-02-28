@@ -2,13 +2,13 @@ FROM openrhino/mpibuilder_base:v0.1.0 as builder
 
 ARG func_name ${func_name}
 ARG file ${file}
-ARG compile ${compile}
+ARG make_args ${make_args}
 ENV FUNC_NAME=${func_name}
 
-COPY ${file} .
-RUN ${compile} ${file} -o ${func_name}
+COPY src/ /app/src
+COPY ldd.sh /app/
+RUN cd $(dirname ${file}) && make -f $(basename ${file}) ${make_args}
 
-COPY ldd.sh .
 RUN sh ldd.sh
 
 FROM openrhino/mpirun_base:v0.1.0
