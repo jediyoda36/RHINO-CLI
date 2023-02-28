@@ -39,7 +39,7 @@ func argsCheck(cmd *cobra.Command, args []string) error {
 	validName := regexp.MustCompile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
 	matchString := validName.MatchString(args[0])
 	if !matchString {
-		fmt.Println("Error: name can only contain a~z, 0~9 and _")
+		fmt.Println("Error: name can only contain a~z, 0~9 and -")
 		os.Exit(0)
 	}
 	if language != "cpp" {
