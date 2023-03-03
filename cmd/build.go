@@ -27,7 +27,7 @@ var buildCmd = &cobra.Command{
 		} else if len(args) > 0 && args[0] != "make" {
 			return fmt.Errorf("build command must start with 'make'")
 		}
-
+		// check image name 
 		validName := regexp.MustCompile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
 		matchString := validName.MatchString(getFuncName(image))
 		if !matchString {
@@ -55,6 +55,7 @@ func builder(args []string, image string, file string) error {
 	var makefilePath string
 	var funcName string = "mpi-func"
 
+	// check Makefile
 	if len(file) == 0 {
 		makefilePath = "./src/Makefile"
 	} else {
@@ -66,15 +67,20 @@ func builder(args []string, image string, file string) error {
 	}
 	fmt.Println("Makefile path:", makefilePath)
 
+	// add build args
 	if len(args) > 0 {
 		buildCommand = args
 	}
 	fmt.Println("Build command:", buildCommand)		
 
-	_, err = os.Stat("Dockerfile") 
-	if err != nil {
-		return fmt.Errorf("build template not found. Please use 'rhino create' first")
+	// check build tools
+	buildFiles := []string{"Dockerfile", "ldd.sh"}
+	for _, file := range buildFiles {
+		if _, err := os.Stat(file); os.IsNotExist(err) {
+			return fmt.Errorf("build template not found. Please use 'rhino create' first")
+		}
 	}
+	fmt.Println("Build tools found. Start building...")
 
 	execCommand = "docker"
 	execArgs = []string{
