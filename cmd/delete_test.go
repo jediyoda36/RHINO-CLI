@@ -13,11 +13,11 @@ import (
 func TestDeleteSingleJob(t *testing.T) {
 	// change work directory to ${workspaceFolder}
 	cwd, err := os.Getwd()
-	assert.Equal(t, nil, err, "test list failed: %s", errorMessage(err))
+	assert.Equal(t, nil, err, "test delete failed: %s", errorMessage(err))
 	if strings.HasSuffix(cwd, "cmd") {
 		os.Chdir("..")
 	}
-	// use `rhino build` to build integration sample
+	// use `rhino build` to build template
 	os.Chdir("templates/func")
 	testFuncName := "test-delete-func-cpp"
 	testFuncImageName := "test-delete-func-cpp:v1"
@@ -40,15 +40,15 @@ func TestDeleteSingleJob(t *testing.T) {
 	assert.Equal(t, nil, err, "test delete failed: %s", errorMessage(err))
 
 	// check if the rhinojob created just now is deleted successfully
-	actualCmdOutput, err := execute("kubectl", []string{"get", "rhinojob", "--namespace", testFuncRunNamespace})
+	actualCmdOutput, err := execute("kubectl", []string{"get", "rhinojob", "-n", testFuncRunNamespace})
 	assert.Equal(t, nil, err, "test delete failed: %s", errorMessage(err))
 
-	expetedCmdOutput := "No resources found in"
-	assert.Equal(t, true, strings.Contains(actualCmdOutput, expetedCmdOutput), "test delete failed:\n"+
-		"expected kubectl output start with: %s\nactual kubectl output: %s\n",
+	expetedCmdOutput := "No resources found in rhino-test namespace.\n"
+	assert.Equal(t, expetedCmdOutput, actualCmdOutput, "test delete failed:\n"+
+		"expected kubectl output: %s\nactual kubectl output: %s\n",
 		expetedCmdOutput, actualCmdOutput)
 
-	// delete rhinojob created just now
+	// delete test namespace and rhinojob created just now
 	execute("kubectl", []string{"delete", "namespace", testFuncRunNamespace, "--force", "--grace-period=0"})
 	
 	// delete the image built just now

@@ -16,7 +16,6 @@ Analyze dynamic dependence, remove soft connections and pack libs
 Main function with MPI basic constructs
 ## Makefile
 Makefile template to build cpp functions
-> Note: If copy your MPI project to `/src`, just make sure that:
+> Note: If you copy your MPI project to `/src`, just make sure that:
 > 1. Use `-f` to sepcify relative path of the Makefile, e.g. `rhino build -f ./src/conf/linux.makefile`
-> 2. Modify your Makefile to change the name of the target file to `mpi-func`, e.g. `$(EXEC): $(OBJS)
-	$(CXX) -o mpi-func`
+> 2. Modify the name of the target file to `mpi-func`, e.g. `$(EXEC): $(OBJS) $(CXX) -o mpi-func`

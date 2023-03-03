@@ -18,7 +18,7 @@ func TestListSingleJob(t *testing.T) {
 	if strings.HasSuffix(cwd, "cmd") {
 		os.Chdir("..")
 	}
-	// use `rhino build` to build integration sample
+	// use `rhino build` to build template
 	os.Chdir("templates/func")
 	testFuncName := "test-list-func-cpp"
 	testFuncImageName := "test-list-func-cpp:v1"
@@ -69,7 +69,7 @@ func TestListSingleJob(t *testing.T) {
 	}
 	assert.Equal(t, true, foundRhinoJob, "test list failed: list output does not contain rhinojob created in this test")
 
-	// delete rhinojob created just now
+	// delete test namespace and rhinojob created just now
 	execute("kubectl", []string{"delete", "namespace", testFuncRunNamespace, "--force", "--grace-period=0"})
 
 	// delete the image built just now
