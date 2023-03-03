@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -17,7 +19,7 @@ func TestListSingleJob(t *testing.T) {
 		os.Chdir("..")
 	}
 	// use `rhino build` to build integration sample
-	os.Chdir("samples/integration")
+	os.Chdir("templates/func")
 	testFuncName := "test-list-func-cpp"
 	testFuncImageName := "test-list-func-cpp:v1"
 	rootCmd.SetArgs([]string{"build", "--image", testFuncImageName})
@@ -25,10 +27,12 @@ func TestListSingleJob(t *testing.T) {
 	assert.Equal(t, nil, err, "preparatory work build failed: %s", errorMessage(err))
 
 	// test run command
-	rootCmd.SetArgs([]string{"run", testFuncImageName, "--np", "2", "--", "1", "10", "1"})
+	execute("kubectl", []string{"create", "namespace", testFuncRunNamespace})
+	rootCmd.SetArgs([]string{"run", testFuncImageName, "--namespace", testFuncRunNamespace})
 	err = rootCmd.Execute()
 	assert.Equal(t, nil, err, "preparatory work run failed: %s", errorMessage(err))
-
+	fmt.Println("Wait 10s and check job status")
+	time.Sleep(10 * time.Second)
 	// test list command
 	// when calling `rootCmd.Execute` to execute `list` command
 	// rhinoJob info will be sent directly to os.Stdout and thus cannot be collected
@@ -39,7 +43,7 @@ func TestListSingleJob(t *testing.T) {
 	assert.Equal(t, nil, err, "test list failed: %s", errorMessage(err))
 
 	os.Stdout = w
-	rootCmd.SetArgs([]string{"list"})
+	rootCmd.SetArgs([]string{"list", "--namespace", testFuncRunNamespace})
 	err = rootCmd.Execute()
 	assert.Equal(t, nil, err, "test list failed: %s", errorMessage(err))
 
@@ -66,7 +70,7 @@ func TestListSingleJob(t *testing.T) {
 	assert.Equal(t, true, foundRhinoJob, "test list failed: list output does not contain rhinojob created in this test")
 
 	// delete rhinojob created just now
-	execute("kubectl", []string{"delete", "rhinojob", testRhinoJobName})
+	execute("kubectl", []string{"delete", "namespace", testFuncRunNamespace, "--force", "--grace-period=0"})
 
 	// delete the image built just now
 	execute("docker", []string{"rmi", testFuncImageName})

@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const testFuncRunNamespace = "rhino-test"
+
 func TestRunSingleJob(t *testing.T) {
 	// change work directory to ${workspaceFolder}
 	cwd, err := os.Getwd()
@@ -18,29 +20,28 @@ func TestRunSingleJob(t *testing.T) {
 		os.Chdir("..")
 	}
 
-	// use `rhino build` to build integration sample
-	os.Chdir("samples/integration")
-	testFuncName := "test-run-func-cpp"
+	// use `rhino build` to build template
+	os.Chdir("templates/func")
 	testFuncImageName := "test-run-func-cpp:v1"
 	rootCmd.SetArgs([]string{"build", "--image", testFuncImageName})
 	err = rootCmd.Execute()
 	assert.Equal(t, nil, err, "preparatory work build failed: %s", errorMessage(err))
 
 	// test run command
-	rootCmd.SetArgs([]string{"run", testFuncImageName, "--np", "2", "--", "1", "10", "1"})
+	execute("kubectl", []string{"create", "namespace", testFuncRunNamespace})
+	rootCmd.SetArgs([]string{"run", testFuncImageName, "--namespace", testFuncRunNamespace})
 	err = rootCmd.Execute()
 	assert.Equal(t, nil, err, "test run failed: %s", errorMessage(err))
 
 	// use `kubectl get rhinojob` to check whether rhinojob has been created
-	fmt.Println("Waiting 10s...")
+	fmt.Println("Wait 10s and check job status")
 	time.Sleep(10 * time.Second)
-	cmdOutput, err := execute("kubectl", []string{"get", "rhinojob"})
+	cmdOutput, err := execute("kubectl", []string{"get", "rhinojob", "--namespace", testFuncRunNamespace})
 	assert.Equal(t, nil, err, "test run failed: %s", errorMessage(err))
-	assert.Equal(t, true, strings.Contains(cmdOutput, "Running"), "rhinojob failed to start")
+	assert.Equal(t, true, strings.Contains(cmdOutput, "Completed"), "rhinojob failed to start")
 	
 	// delete rhinojob created just now
-	testRhinoJobName := "rhinojob-" + testFuncName
-	execute("kubectl", []string{"delete", "rhinojob", testRhinoJobName})
+	execute("kubectl", []string{"delete", "namespace", testFuncRunNamespace, "--force", "--grace-period=0"})
 
 	// delete the image built just now
 	execute("docker", []string{"rmi", testFuncImageName})
