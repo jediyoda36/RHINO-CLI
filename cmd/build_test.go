@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -26,8 +27,19 @@ func TestBuildSingleFileCpp(t *testing.T) {
 	// change work directory to template folder
 	os.Chdir(testFuncName)
 
+	// check if the error is reported when the image name set incorrectly
+	testImageName := "test_func:v1"
+	rootCmd.SetArgs([]string{"build", "--image", testImageName})
+	err = rootCmd.Execute()
+	assert.Equal(t, fmt.Errorf("image name can only contain a~z, 0~9 and -"), err, "test failed: invalid image name not reported")
+	
+	// check if the error is reported when the make command set incorrectly
 	testFuncImageName := "test-build-func-cpp:v1"
-	rootCmd.SetArgs([]string{"build", "main.cpp", "--image", testFuncImageName})
+	rootCmd.SetArgs([]string{"build", "--image", testImageName, "--", "cmake"})
+	err = rootCmd.Execute()
+	assert.Equal(t, fmt.Errorf("build command must start with 'make'"), err, "test failed: invalid make command not reported")
+
+	rootCmd.SetArgs([]string{"build", "--image", testFuncImageName})
 	err = rootCmd.Execute()
 	assert.Equal(t, nil, err, "test build failed: %s", errorMessage(err))
 
@@ -47,6 +59,7 @@ func TestBuildSingleFileCpp(t *testing.T) {
 	// remove test image
 	if foundBuiltImage {
 		execute("docker", []string{"rmi", testFuncImageName})
+		execute("sh", []string{"-c", "docker rmi -f $(docker images | grep none | grep second | awk '{print $3}')"})
 	}
 
 	// remove template folder

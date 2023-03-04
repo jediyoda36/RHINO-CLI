@@ -3,14 +3,16 @@
 # set +o nounset
 # set -o pipefail
 
-if [ ! -f "./$FUNC_NAME" ];then
-    echo "cannot find file $FUNC_NAME!"
-    exit
-else
+file_path=$(find ./ -name $FUNC_NAME)
+if [ "$file_path" ]; then
+    mv $file_path /app/$FUNC_NAME
     echo "loding app $FUNC_NAME"
+else
+    echo "cannot find file $FUNC_NAME!"
+    exit 1
 fi
 
-if [ ! -d "/shared_lib" ];then
+if [ ! -d "/shared_lib" ]; then
     mkdir /shared_lib
 fi
 cd /shared_lib

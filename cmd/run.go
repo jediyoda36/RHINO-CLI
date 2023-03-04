@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	rhinojob "github.com/OpenRHINO/RHINO-Operator/api/v1alpha1"
 	"github.com/spf13/cobra"
@@ -96,8 +97,7 @@ spec:
 	yamlFile += strconv.Itoa(execTime) + `
   parallelism: `
 	yamlFile += strconv.Itoa(parallel) + ` 
-  appExec: "./`
-	yamlFile += funcName + `"`
+  appExec: "./mpi-func"`
 	if len(args) > 1 {
 		yamlFile += `
   appArgs: [`
@@ -135,4 +135,10 @@ func runRhinoJob(client dynamic.Interface, args []string) (*rhinojob.RhinoJobLis
 		return nil, err
 	}
 	return &rj, nil
+}
+
+func getFuncName(image string) string {
+	nameTag := strings.Split(image, "/")
+	funcName := strings.Split(nameTag[len(nameTag)-1], ":")[0]
+	return funcName
 }

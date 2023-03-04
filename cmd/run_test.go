@@ -1,14 +1,16 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-const testFuncRunNamespace = "test-func-cpp-ns"
+const testFuncRunNamespace = "rhino-test"
 
 func TestRunSingleJob(t *testing.T) {
 	// change work directory to ${workspaceFolder}
@@ -18,51 +20,30 @@ func TestRunSingleJob(t *testing.T) {
 		os.Chdir("..")
 	}
 
-	// to test run command
-	// first: use `rhino create` to create a template folder
-	// second: use `rhino build` to build an image
-	testFuncName := "test-run-func-cpp"
-	rootCmd.SetArgs([]string{"create", testFuncName, "--lang", "cpp"})
-	err = rootCmd.Execute()
-	assert.Equal(t, nil, err, "preparatory work create failed: %s", errorMessage(err))
-
-	os.Chdir(testFuncName)
+	// use `rhino build` to build template
+	os.Chdir("templates/func")
 	testFuncImageName := "test-run-func-cpp:v1"
-	rootCmd.SetArgs([]string{"build", "main.cpp", "--image", testFuncImageName})
+	rootCmd.SetArgs([]string{"build", "--image", testFuncImageName})
 	err = rootCmd.Execute()
 	assert.Equal(t, nil, err, "preparatory work build failed: %s", errorMessage(err))
 
-	// before test `run` command, create a test namespace
-	execute("kubectl", []string{"create", "namespace", testFuncRunNamespace})
-
 	// test run command
+	execute("kubectl", []string{"create", "namespace", testFuncRunNamespace})
 	rootCmd.SetArgs([]string{"run", testFuncImageName, "--namespace", testFuncRunNamespace})
 	err = rootCmd.Execute()
 	assert.Equal(t, nil, err, "test run failed: %s", errorMessage(err))
 
 	// use `kubectl get rhinojob` to check whether rhinojob has been created
+	fmt.Println("Wait 10s and check job status")
+	time.Sleep(10 * time.Second)
 	cmdOutput, err := execute("kubectl", []string{"get", "rhinojob", "--namespace", testFuncRunNamespace})
 	assert.Equal(t, nil, err, "test run failed: %s", errorMessage(err))
-
-	cmdOutputLines := strings.Split(cmdOutput, "\n")
-	testRhinoJobName := "rhinojob-" + testFuncName
-	var foundTestRhinoJob bool
-	for _, line := range cmdOutputLines {
-		if strings.HasPrefix(line, testRhinoJobName) {
-			foundTestRhinoJob = true
-			break
-		}
-	}
-	assert.Equal(t, true, foundTestRhinoJob, "test run failed: rhinojob not found")
-
-	// delete test namespace and rhinojob created just now
-	execute("kubectl", []string{"delete", "rhinojob", testRhinoJobName, "-n", testFuncRunNamespace})
-	execute("kubectl", []string{"delete", "namespace", testFuncRunNamespace})
+	assert.Equal(t, true, strings.Contains(cmdOutput, "Completed"), "rhinojob failed to start")
+	
+	// delete rhinojob created just now
+	execute("kubectl", []string{"delete", "namespace", testFuncRunNamespace, "--force", "--grace-period=0"})
 
 	// delete the image built just now
 	execute("docker", []string{"rmi", testFuncImageName})
-
-	// remove template folder
-	os.Chdir("..")
-	os.RemoveAll(testFuncName)
+	execute("sh", []string{"-c", "docker rmi -f $(docker images | grep none | grep second | awk '{print $3}')"})
 }
