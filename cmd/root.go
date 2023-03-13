@@ -45,6 +45,10 @@ func buildFromKubeconfig(configPath string) (dynamicClient *dynamic.DynamicClien
 	}
 	context, exist := cmdapiConfig.Contexts[cmdapiConfig.CurrentContext]
 	if exist {
+		if context.Namespace == "" { 
+			//If namespace is not defined in kubeconfig, use "default"
+			context.Namespace = "default"
+		}
 		currentNamespace = &context.Namespace
 	} else {
 		return nil, nil, err
