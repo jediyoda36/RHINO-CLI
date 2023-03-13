@@ -23,7 +23,7 @@ func TestCreateLangErr(t *testing.T) {
 // the same as the template already in `OpenRhino-CLI/templates`
 func TestCreateFunc(t *testing.T) {
 	// change test directory to ${workspaceFolder}
-	// without this operation, contents downloaded from github will be saved in `cmd` directory
+	// without this operation, contents generated will be saved in `cmd` directory
 	cwd, err := os.Getwd()
 	assert.Equal(t, nil, err, "test create failed: %s", errorMessage(err))
 	if strings.HasSuffix(cwd, "cmd") {
@@ -35,12 +35,12 @@ func TestCreateFunc(t *testing.T) {
 	err = rootCmd.Execute()
 	assert.Equal(t, nil, err, "test create func failed: %s", errorMessage(err))
 
-	// check if the folder has been downloaded and unzipped successfully
+	// check if the folder has been generated successfully
 	_, err = os.Stat(testFuncName)
 	assert.Equal(t, nil, err, "test create func failed: %s", errorMessage(err))
 
 	// read the 2 folder and check if they are exactly the same(filename, filecontent)
-	checkDownloadFolerContent(t, testFuncName, templateFuncFolerName)
+	checkGenerateFolerContent(t, testFuncName, templateFuncFolerName)
 
 	// delete template folder
 	err = os.RemoveAll(testFuncName)
@@ -54,45 +54,45 @@ func errorMessage(err error) string {
 	return err.Error()
 }
 
-func checkDownloadFolerContent(t *testing.T, downloadFolerName string, templateFolderName string) {
+func checkGenerateFolerContent(t *testing.T, generateFolerName string, templateFolderName string) {
 	// open and read 2 folders
-	downloadFoler, err := os.Open(downloadFolerName)
+	generateFoler, err := os.Open(generateFolerName)
 	assert.Equal(t, nil, err, "test create func failed: %s", errorMessage(err))
-	defer downloadFoler.Close()
+	defer generateFoler.Close()
 
 	templateFolder, err := os.Open(templateFolderName)
 	assert.Equal(t, nil, err, "test create func failed: %s", errorMessage(err))
 	defer templateFolder.Close()
 
-	downloadFolerInfo, err := downloadFoler.ReadDir(-1)
+	generateFolerInfo, err := generateFoler.ReadDir(-1)
 	assert.Equal(t, nil, err, "test create func failed: %s", errorMessage(err))
 	templateFolderInfo, err := templateFolder.ReadDir(-1)
 	assert.Equal(t, nil, err, "test create func failed: %s", errorMessage(err))
 
 	// check if the number of entries in download folder and template folder are the same
-	assert.Equal(t, len(templateFolderInfo), len(downloadFolerInfo), "number of entries in %s is not the same as "+
-		"number of entries in %s", downloadFolerName, templateFolderName)
+	assert.Equal(t, len(templateFolderInfo), len(generateFolerInfo), "number of entries in %s is not the same as "+
+		"number of entries in %s", generateFolerName, templateFolderName)
 
 	// check if the entry names in the 2 folders are the same
 	// if there are folders in the 2 folders, call this function recursively
 	for i := 0; i < len(templateFolderInfo); i++ {
 		// check entry name
-		assert.Equal(t, downloadFolerInfo[i].Name(), templateFolderInfo[i].Name())
+		assert.Equal(t, generateFolerInfo[i].Name(), templateFolderInfo[i].Name())
 
-		downloadFileName := downloadFolerName + "/" + downloadFolerInfo[i].Name()
+		generateFileName := generateFolerName + "/" + generateFolerInfo[i].Name()
 		templateFileName := templateFolderName + "/" + templateFolderInfo[i].Name()
 
-		if downloadFolerInfo[i].IsDir() && templateFolderInfo[i].IsDir() {
-			checkDownloadFolerContent(t, downloadFileName, templateFileName)
+		if generateFolerInfo[i].IsDir() && templateFolderInfo[i].IsDir() {
+			checkGenerateFolerContent(t, generateFileName, templateFileName)
 		} else {
-			downloadFileContent, err := os.ReadFile(downloadFileName)
+			generateFileContent, err := os.ReadFile(generateFileName)
 			assert.Equal(t, nil, err, "test create func failed: %s", errorMessage(err))
 			templateFileContent, err := os.ReadFile(templateFileName)
 			assert.Equal(t, nil, err, "test create func failed: %s", errorMessage(err))
 
-			assert.Equal(t, string(templateFileContent), string(downloadFileContent),
+			assert.Equal(t, string(templateFileContent), string(generateFileContent),
 				"test create func failed: file content of %s and %s are not the same",
-				templateFileName, downloadFileName)
+				templateFileName, generateFileName)
 		}
 	}
 }

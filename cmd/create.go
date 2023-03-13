@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"archive/zip"
+	"bytes"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 
+	"github.com/OpenRHINO/RHINO-CLI/generate"
 	"github.com/spf13/cobra"
 )
 
@@ -52,9 +53,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 		os.Exit(0)
 	}
 
-	// download the template from github, if fail, delete folder
-	templateURL := "https://github.com/OpenRHINO/templates/raw/main/func.zip"
-	if err := downloadTemplate(templateURL, dirName); err != nil {
+	if err := generateTemplate(dirName); err != nil {
 		fmt.Println("Error:", err.Error())
 		os.Exit(0)
 	}
@@ -62,28 +61,12 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func downloadTemplate(templateURL, dstDir string) error {
-	// 下载模板文件包，并暂存为 template.zip (模板文件包应当为zip格式，但可能不叫这个名字)
-	resp, err := http.Get(templateURL)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	zipfile, err := os.Create("template.zip")
-	if err != nil {
-		return err
-	}
-	defer zipfile.Close()
-	_, err = io.Copy(zipfile, resp.Body)
+func generateTemplate(dstDir string) error {
+	zr, err := zip.NewReader(bytes.NewReader(generate.TemplatesZip), int64(len(generate.TemplatesZip)))
 	if err != nil {
 		return err
 	}
 
-	// 解压模板文件包
-	zr, err := zip.OpenReader("template.zip")
-	if err != nil {
-		return err
-	}
 	for _, file := range zr.File {
 		path := filepath.Join(dstDir, file.Name)
 		// 如果是目录，则创建目录，并跳过当前循环，继续处理下一个
@@ -109,12 +92,6 @@ func downloadTemplate(templateURL, dstDir string) error {
 		}
 		fw.Close()
 		fr.Close()
-	}
-	zr.Close()
-
-	// 删除缓存的模板文件包
-	if err := os.Remove("template.zip"); err != nil {
-		return err
 	}
 
 	return nil
