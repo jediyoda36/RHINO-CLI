@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"archive/zip"
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -61,7 +62,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 }
 
 func generateTemplate(dstDir string) error {
-	zr, err := zip.NewReader(generate.TemplatesZip, int64(len(generate.TemplatesZip)))
+	zr, err := zip.NewReader(bytes.NewReader(generate.TemplatesZip), int64(len(generate.TemplatesZip)))
 	if err != nil {
 		return err
 	}
