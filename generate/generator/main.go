@@ -1,7 +1,7 @@
 /*
  * This code is based on code from the Open Source Project knative, which is
  * released under the Apache License, version 2.0. The original code can be
- * found at https://github.com/knative/func/blob/main/generate/templates/main.go
+ * found at https://github.com/knative/func/blob/0b1d53730928e6be17a6e48d216772a4b1cb2181/generate/templates/main.go
  */
 
 package main
