@@ -3,14 +3,18 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-# If there are multiple files found, only use the first result
-file_path=$(find ./ -name "$FUNC_NAME" | head -n 1)
+# Look for executable files named $FUNC_NAME and check uniqueness
+file_path=$(find ./ -type f -name $FUNC_NAME -executable)
 if [ "$file_path" ]; then
+    if [ "$(echo "$file_path" | wc -l)" -gt 1 ]; then
+        echo "Found multiple executable files named '$FUNC_NAME'. Please check your Makefile!" >&2
+        exit 1 
+    fi
     mv "$file_path" "/app/$FUNC_NAME"
-    echo "loading app $FUNC_NAME"
+    echo "Loading app $FUNC_NAME"
 else
 # Exit and report an err when no $FUNC_NAME file is found
-    echo "cannot find file $FUNC_NAME!" >&2
+    echo "Cannot find file $FUNC_NAME!" >&2
     exit 1
 fi
 
@@ -20,13 +24,13 @@ fi
 cd "/shared_lib"
 echo "The shared_lib dir created"
 
-# Identify which libs need to loaded
+# Identify which libs need to be loaded
 sharedlibs=$(ldd "/app/$FUNC_NAME" | grep -vE "ld-musl-x86_64|mpi" | awk '{print $3}' || true)
 if [ "$sharedlibs" != "" ]; then
-    echo "shared libs found"
+    echo "Shared libs found"
     echo "$sharedlibs" > path.txt
 else
-    echo "no shared lib need to be loaded"
+    echo "No shared lib need to be loaded"
     exit 0
 fi
 
