@@ -1,31 +1,33 @@
 # Compiler and linker options
 CXX = mpicxx
-CXXFLAGS = -Wall -O3
+CXXFLAGS = -fopenmp -Wextra -pedantic -Wall -O3
 MPI_LFLAGS =
-LDFLAGS = 
+LDFLAGS = -pthread
 
 # Source files and object files
 SRCS = main.cpp
-OBJS = $(SRCS:.cpp=.o)
+OBJS = $(patsubst %.cpp,%.o,$(SRCS))
 
 # Libraries and header file paths
 LIBS = 
 INCLUDES = 
 
 # Target executable
-EXEC = mpi-func
+TARGET = mpi-func
 
 # Phony targets
 .PHONY: all clean
 
 # Build rules
-all: $(EXEC)
+all: clean $(TARGET)
 
-$(EXEC): $(OBJS)
-	$(CXX) $(MPI_LFLAGS) $(OBJS) $(LIBS) -o $(EXEC) $(LDFLAGS)
+$(TARGET): $(OBJS)
+	$(CXX) $(MPI_LFLAGS) $(OBJS) $(LIBS) -o $(TARGET) $(LDFLAGS)
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) $(EXEC)
+	rm -f $(OBJS) $(TARGET)
+
+.DEFAULT_GOAL := all

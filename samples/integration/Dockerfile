@@ -7,7 +7,7 @@ ENV FUNC_NAME=${func_name}
 
 COPY src/ /app/src
 COPY ldd.sh /app/
-RUN cd $(dirname ${file}) && make -f $(basename ${file}) ${make_args}
+RUN cd $(dirname ${file}) && make -B -f $(basename ${file}) ${make_args}
 
 RUN sh ldd.sh
 
