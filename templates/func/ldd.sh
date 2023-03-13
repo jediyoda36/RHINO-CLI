@@ -4,7 +4,7 @@ set -o nounset
 set -o pipefail
 
 # Look for executable files named $FUNC_NAME and check uniqueness
-file_path=$(find ./ -type f -name $FUNC_NAME -executable)
+file_path=$(find ./ -type f -name "$FUNC_NAME" -executable)
 if [ "$file_path" ]; then
     if [ "$(echo "$file_path" | wc -l)" -gt 1 ]; then
         echo "Found multiple executable files named '$FUNC_NAME'. Please check your Makefile!" >&2
