@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"regexp"
@@ -27,7 +28,7 @@ var buildCmd = &cobra.Command{
 		} else if len(args) > 0 && args[0] != "make" {
 			return fmt.Errorf("build command must start with 'make'")
 		}
-		// check image name 
+		// check image name
 		validName := regexp.MustCompile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
 		matchString := validName.MatchString(getFuncName(image))
 		if !matchString {
@@ -47,7 +48,7 @@ func init() {
 	buildCmd.Flags().StringVarP(&image, "image", "i", "", "full image form: [registry]/[namespace]/[name]:[tag]")
 	buildCmd.Flags().StringVarP(&file, "file", "f", "", "relative path of the makefile")
 }
-		
+
 func builder(args []string, image string, file string) error {
 	var execArgs []string
 	var execCommand string
@@ -71,7 +72,7 @@ func builder(args []string, image string, file string) error {
 	if len(args) > 0 {
 		buildCommand = args
 	}
-	fmt.Println("Build command:", buildCommand)		
+	fmt.Println("Build command:", buildCommand)
 
 	// check build tools
 	buildFiles := []string{"Dockerfile", "ldd.sh"}
@@ -93,7 +94,11 @@ func builder(args []string, image string, file string) error {
 	}
 
 	cmd := exec.Command(execCommand, execArgs...)
-	stdout, err := cmd.StdoutPipe()
+	stdoutPipe, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil
+	}
+	stderrPipe, err := cmd.StderrPipe()
 	if err != nil {
 		return err
 	}
@@ -103,12 +108,8 @@ func builder(args []string, image string, file string) error {
 		return err
 	}
 
-	scanner := bufio.NewScanner(stdout)
-	scanner.Split(bufio.ScanLines)
-	for scanner.Scan() {
-		cmdOutput := scanner.Text()
-		fmt.Println(cmdOutput)
-	}
+	go printPipeOutput(stdoutPipe)
+	go printPipeOutput(stderrPipe)
 
 	err = cmd.Wait()
 	if err != nil {
@@ -128,4 +129,13 @@ func execute(commandName string, params []string) (string, error) {
 	}
 	err = cmd.Wait()
 	return out.String(), err
+}
+
+func printPipeOutput(pipe io.ReadCloser) {
+	scanner := bufio.NewScanner(pipe)
+	scanner.Split(bufio.ScanLines)
+	for scanner.Scan() {
+		output := scanner.Text()
+		fmt.Println(output)
+	}
 }
