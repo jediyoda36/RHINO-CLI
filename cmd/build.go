@@ -96,7 +96,7 @@ func builder(args []string, image string, file string) error {
 	cmd := exec.Command(execCommand, execArgs...)
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil
+		return err
 	}
 	stderrPipe, err := cmd.StderrPipe()
 	if err != nil {
