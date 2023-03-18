@@ -10,7 +10,9 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
-            "args": ["list", "-n", "default"]
+            "args": [
+                "list"
+            ]
         },
         {
             "name": "rhino run",
@@ -18,9 +20,25 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
-            "args": ["run", "openrhino/sample",
-                "--namespace",
-                "default"]
+            "args": [
+                "run",
+                "--np",
+                "6",
+                "openrhino/sample"
+            ]
+        },
+        {
+            "name": "rhino build",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/main.go",
+            "args": [
+                "build",
+                "-i",
+                "openrhino/sample"
+            ],
+            "cwd": "${workspaceFolder}/samples/integration"
         }
     ]
 }
