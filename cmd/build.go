@@ -12,54 +12,57 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var image string
-var file string
+type BuildOptions struct {
+	image string
+	file  string
+}
 
-var buildCmd = &cobra.Command{
-	Use:   "build",
-	Short: "Build MPI function/project",
-	Long:  "\nBuild MPI function/project into a docker image",
-	Example: `  rhino build --image foo/hello:v1.0
+func NewBuildCommand() *cobra.Command {
+	buildOpts := &BuildOptions{}
+
+	buildCmd := &cobra.Command{
+		Use:   "build",
+		Short: "Build MPI function/project",
+		Long:  "\nBuild MPI function/project into a docker image",
+		Example: `  rhino build --image foo/hello:v1.0
   rhino build -f ./src/config/Makefile -i bar/mpibench:v2.1 -- make -j all arch=Linux`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(image) == 0 {
-			return fmt.Errorf("please provide the image name")
-		} else if len(args) > 0 && args[0] != "make" {
-			return fmt.Errorf("build command must start with 'make'")
-		}
-		// check image name
-		validName := regexp.MustCompile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
-		matchString := validName.MatchString(getFuncName(image))
-		if !matchString {
-			return fmt.Errorf("image name can only contain a~z, 0~9 and -")
-		}
+		Args:  buildOpts.validateArgs,
+		RunE:  buildOpts.runBuild,
+	}
 
-		if err := builder(args, image, file); err != nil {
-			fmt.Println("Error:", err.Error())
-			os.Exit(0)
-		}
-		return nil
-	},
+	buildCmd.Flags().StringVarP(&buildOpts.image, "image", "i", "", "full image form: [registry]/[namespace]/[name]:[tag]")
+	buildCmd.Flags().StringVarP(&buildOpts.file, "file", "f", "", "relative path of the makefile")
+
+	return buildCmd
 }
 
-func init() {
-	rootCmd.AddCommand(buildCmd)
-	buildCmd.Flags().StringVarP(&image, "image", "i", "", "full image form: [registry]/[namespace]/[name]:[tag]")
-	buildCmd.Flags().StringVarP(&file, "file", "f", "", "relative path of the makefile")
+func (b *BuildOptions) validateArgs(buildCmd *cobra.Command, args []string) error {
+	if len(b.image) == 0 {
+		return fmt.Errorf("please provide the image name")
+	} else if len(args) > 0 && args[0] != "make" {
+		return fmt.Errorf("build command must start with 'make'")
+	}
+
+	validName := regexp.MustCompile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
+	matchString := validName.MatchString(getFuncName(b.image))
+	if !matchString {
+		return fmt.Errorf("image name can only contain a~z, 0~9 and -")
+	}
+	return nil
 }
 
-func builder(args []string, image string, file string) error {
+func (b *BuildOptions) runBuild(buildCmd *cobra.Command, args []string) error {
 	var execArgs []string
 	var execCommand string
 	var buildCommand []string = []string{"make"}
 	var makefilePath string
-	var funcName string = "mpi-func"
+	var funcName string = "mpi-func" //TODO: Since the funcName is hard coded and used in different files, remove this line and use an external const to avoid inconsistency.
 
 	// check Makefile
-	if len(file) == 0 {
+	if len(b.file) == 0 {
 		makefilePath = "./src/Makefile"
 	} else {
-		makefilePath = file
+		makefilePath = b.file
 	}
 	_, err := os.Stat(makefilePath)
 	if err != nil {
@@ -84,7 +87,7 @@ func builder(args []string, image string, file string) error {
 
 	execCommand = "docker"
 	execArgs = []string{
-		"build", "-t", image,
+		"build", "-t", b.image,
 		"--rm",
 		"--build-arg", "func_name=" + funcName,
 		"--build-arg", "file=" + makefilePath,
