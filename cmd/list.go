@@ -14,57 +14,70 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List RHINO jobs",
-	Long:  "\nList all the RHINO jobs in your current namespace or the namespace specified",
-	Example: `  rhino list
+type ListOptions struct {
+	kubeconfig string
+	namespace  string
+}
+
+func NewListCommand() *cobra.Command {
+	listOpts := &ListOptions{}
+	listCmd := &cobra.Command{
+		Use:   "list",
+		Short: "List RHINO jobs",
+		Long:  "\nList all the RHINO jobs in your current namespace or the namespace specified",
+		Example: `  rhino list
   rhino list --namespace user_func`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		var configPath string
-		if len(kubeconfig) == 0 {
-			if home := homedir.HomeDir(); home != "" {
-				configPath = filepath.Join(home, ".kube", "config")
-			} else {
-				fmt.Println("Error: kubeconfig file not found, please use --config to specify the absolute path")
-				os.Exit(0)
-			}
+		RunE: listOpts.list,
+	}
+
+	listCmd.Flags().StringVarP(&listOpts.namespace, "namespace", "n", "", "the namespace to list RHINO jobs")
+	listCmd.Flags().StringVar(&listOpts.kubeconfig, "kubeconfig", "", "the path of the kubeconfig file")
+
+	return listCmd
+}
+
+func (l *ListOptions) list(cmd *cobra.Command, args []string) error {
+	// Check the arguments
+	if len(args) != 0 {
+		cmd.Help()
+		os.Exit(0)
+	}
+
+	// Get the kubeconfig file
+	if len(l.kubeconfig) == 0 {
+		if home := homedir.HomeDir(); home != "" {
+			l.kubeconfig = filepath.Join(home, ".kube", "config")
 		} else {
-			configPath = kubeconfig
-		}
-
-		dynamicClient, currentNamespace, err := buildFromKubeconfig(configPath)
-		if err != nil {
-			return err
-		}
-		if namespace == "" {
-			namespace = *currentNamespace
-		}
-
-		list, err := listRhinoJob(dynamicClient)
-		if err != nil {
-			return err
-		}
-		if len(list.Items) == 0 {
-			fmt.Println("No RhinoJobs found in the namespace")
+			fmt.Println("Error: kubeconfig file not found, please use --config to specify the absolute path")
 			os.Exit(0)
 		}
-		fmt.Printf("%-20s\t%-15s\t%-5s\n", "Name", "Parallelism", "Status")
-		for _, rj := range list.Items {
-			fmt.Printf("%-20v\t%-15v\t%-5v\n", rj.Name, *rj.Spec.Parallelism, rj.Status.JobStatus)
-		}
-		return nil
-	},
+	}	
+
+	// Build the dynamic client
+	dynamicClient, currentNamespace, err := buildFromKubeconfig(l.kubeconfig)
+	if err != nil {
+		return err
+	}
+	if l.namespace == "" {
+		l.namespace = *currentNamespace
+	}
+	list, err := l.listRhinoJob(dynamicClient)
+	if err != nil {
+		return err
+	}
+	if len(list.Items) == 0 {
+		fmt.Println("No RhinoJobs found in the namespace")
+		os.Exit(0)
+	}
+	fmt.Printf("%-20s\t%-15s\t%-5s\n", "Name", "Parallelism", "Status")
+	for _, rj := range list.Items {
+		fmt.Printf("%-20v\t%-15v\t%-5v\n", rj.Name, *rj.Spec.Parallelism, rj.Status.JobStatus)
+	}
+	return nil
 }
 
-func init() {
-	rootCmd.AddCommand(listCmd)
-	listCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "the namespace to list RHINO jobs")
-	listCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "the path of the kubeconfig file")
-}
-
-func listRhinoJob(client dynamic.Interface) (*rhinojob.RhinoJobList, error) {
-	list, err := client.Resource(RhinoJobGVR).Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
+func (l *ListOptions) listRhinoJob(client dynamic.Interface) (*rhinojob.RhinoJobList, error) {
+	list, err := client.Resource(RhinoJobGVR).Namespace(l.namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
