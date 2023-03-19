@@ -11,49 +11,58 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-var rhinojobName string
-
-var deleteCmd = &cobra.Command{
-	Use:   "delete [name]",
-	Short: "Delete a RHINO job by name",
-	Long:  "\nDelete a RHINO job by name",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) == 0 {
-			return fmt.Errorf("[name] cannot be empty")
-		}
-		rhinojobName = args[0]
-		var configPath string
-		if len(kubeconfig) == 0 {
-			if home := homedir.HomeDir(); home != "" {
-				configPath = filepath.Join(home, ".kube", "config")
-			} else {
-				fmt.Println("Error: kubeconfig file not found, please use --config to specify the absolute path")
-				os.Exit(0)
-			}
-		} else {
-			configPath = kubeconfig
-		}
-
-		dynamicClient, currentNamespace, err := buildFromKubeconfig(configPath)
-		if err != nil {
-			return err
-		}
-		if namespace == "" {
-			namespace = *currentNamespace
-		}
-
-		err = dynamicClient.Resource(RhinoJobGVR).Namespace(namespace).Delete(context.TODO(), rhinojobName, metav1.DeleteOptions{})
-		if err != nil {
-			fmt.Println("Error:", err.Error())
-			os.Exit(0)
-		}
-		fmt.Println("RhinoJob " + rhinojobName + " deleted")
-		return nil
-	},
+type DeleteOptions struct {
+	rhinojobName string
+	kubeconfig   string
+	namespace    string
 }
 
-func init() {
-	rootCmd.AddCommand(deleteCmd)
-	deleteCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "the namespace of the RHINO job")
-	deleteCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "the path of the kubeconfig file")
+func NewDeleteCommand() *cobra.Command {
+	deleteOpts := &DeleteOptions{}
+	deleteCmd := &cobra.Command{
+		Use:   "delete",
+		Short: "Delete a RHINO job by name",
+		Long:  "\nDelete a RHINO job by name",
+		Args:  deleteOpts.argsCheck,
+		RunE:  deleteOpts.runDelete,
+	}
+	deleteCmd.Flags().StringVarP(&deleteOpts.namespace, "namespace", "n", "", "namespace of the RHINO job")
+	deleteCmd.Flags().StringVar(&deleteOpts.kubeconfig, "kubeconfig", "", "path to the kubeconfig file")
+
+	return deleteCmd
+}
+
+func (d *DeleteOptions) argsCheck(cmd *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("[name] cannot be empty")
+	}
+	d.rhinojobName = args[0]
+	if len(d.kubeconfig) == 0 {
+		if home := homedir.HomeDir(); home != "" {
+			d.kubeconfig = filepath.Join(home, ".kube", "config")
+		} else {
+			fmt.Println("Error: kubeconfig file not found, please use --config to specify the absolute path")
+			os.Exit(0)
+		}
+	}
+
+	return nil
+}
+
+func (d *DeleteOptions) runDelete(cmd *cobra.Command, args []string) error {
+	dynamicClient, currentNamespace, err := buildFromKubeconfig(d.kubeconfig)
+	if err != nil {
+		return err
+	}
+	if d.namespace == "" {
+		d.namespace = *currentNamespace
+	}
+
+	err = dynamicClient.Resource(RhinoJobGVR).Namespace(d.namespace).Delete(context.TODO(), d.rhinojobName, metav1.DeleteOptions{})
+	if err != nil {
+		fmt.Println("Error: ", err.Error())
+		os.Exit(0)
+	}
+	fmt.Println("RhinoJob " + d.rhinojobName + " deleted")
+	return nil
 }
