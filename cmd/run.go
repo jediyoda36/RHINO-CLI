@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 
 	rhinojob "github.com/OpenRHINO/RHINO-Operator/api/v1alpha1"
 	"github.com/spf13/cobra"
@@ -18,85 +17,101 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-var parallel int
-var execTime int
-var dataPath string
-var dataServer string
-var funcName string
+type RunOptions struct {
+	parallel   int
+	timeToLive int
+	dataPath   string
+	dataServer string
+	funcName   string
 
-var runCmd = &cobra.Command{
-	Use:   "run [image]",
-	Short: "Submit and run a RHINO job",
-	Long:  "\nSubmit an MPI function/project and run it as a RHINO job",
-	Example: `  rhino run hello:v1.0 --namespace user_space
+	kubeconfig string
+	namespace  string
+}
+
+func NewRunCommand() *cobra.Command {
+	runOpts := &RunOptions{}
+	runCmd := &cobra.Command{
+		Use:   "run [image]",
+		Short: "Submit and run a RHINO job",
+		Long:  "\nSubmit an MPI function/project and run it as a RHINO job",
+		Example: `  rhino run hello:v1.0 --namespace user_space
   rhino run foo/matmul:v2.1 --np 4 -- arg1 arg2 
   rhino run mpi/testbench -n 32 -t 800 --server 10.0.0.7 --dir /mnt -- --in=/data/file --out=/data/out`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		var configPath string
-		if len(args) == 0 {
-			cmd.Help()
-			os.Exit(0)
-		}
-		funcName = getFuncName(args[0])
-		if len(kubeconfig) == 0 {
-			if home := homedir.HomeDir(); home != "" {
-				configPath = filepath.Join(home, ".kube", "config")
-			} else {
-				fmt.Println("Error: kubeconfig file not found, please use --config to specify the absolute path")
-				os.Exit(0)
-			}
-		} else {
-			configPath = kubeconfig
-		}
+		RunE: runOpts.run,
+	}
 
-		dynamicClient, currentNamespace, err := buildFromKubeconfig(configPath)
-		if err != nil {
-			return err
-		}
-		if namespace == "" {
-			namespace = *currentNamespace
-		}
-		_, err = runRhinoJob(dynamicClient, args)
-		if err != nil {
-			fmt.Println(err.Error())
-			os.Exit(0)
-		}
-		fmt.Println("RhinoJob", funcName, "created")
-		return nil
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(runCmd)
-	runCmd.Flags().StringVar(&dataServer, "server", "", "IP address of an NFS server")
-	runCmd.Flags().StringVar(&dataPath, "dir", "", "a directory in the NFS server, to store data and shared with all the MPI processes")
+	runCmd.Flags().StringVar(&runOpts.dataServer, "server", "", "IP address of an NFS server")
+	runCmd.Flags().StringVar(&runOpts.dataPath, "dir", "", "a directory in the NFS server, to store data and shared with all the MPI processes")
 	runCmd.MarkFlagsRequiredTogether("server", "dir")
-	runCmd.Flags().IntVar(&parallel, "np", 1, "the number of MPI processes")
-	runCmd.Flags().IntVarP(&execTime, "ttl", "t", 600, "Time To Live (seconds). The RHINO job will be deleted after this time, whether it is completed or not.")
-	runCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "the namespace of the RHINO job")
-	runCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "the path of the kubeconfig file")
+	runCmd.Flags().IntVar(&runOpts.parallel, "np", 1, "the number of MPI processes")
+	runCmd.Flags().IntVarP(&runOpts.timeToLive, "ttl", "t", 600, "Time To Live (seconds). The RHINO job will be deleted after this time, whether it is completed or not.")
+	runCmd.Flags().StringVarP(&runOpts.namespace, "namespace", "n", "", "the namespace of the RHINO job")
+	runCmd.Flags().StringVar(&runOpts.kubeconfig, "kubeconfig", "", "the path of the kubeconfig file")
+
+	return runCmd
 }
 
-func printYAML(args []string) (yamlFile string) {
+func (r *RunOptions) run(cmd *cobra.Command, args []string) error {
+	// Check the arguments
+	if len(args) == 0 {
+		cmd.Help()
+		os.Exit(0)
+	}
+	r.funcName = getFuncName(args[0])
+	if r.parallel < 1 {
+		return fmt.Errorf("the number of MPI processes (--np) must be greater than 0")
+	}
+	if r.timeToLive < 0 {
+		return fmt.Errorf("the time to live (--ttl) must be greater than or equal to 0")
+	}
+	if r.kubeconfig == "" {
+		if home := homedir.HomeDir(); home != "" {
+			r.kubeconfig = filepath.Join(home, ".kube", "config")
+		} else {
+			fmt.Println("Error: kubeconfig file not found, please use --config to specify the absolute path")
+			os.Exit(0)
+		}
+	}
+
+	dynamicClient, currentNamespace, err := buildFromKubeconfig(r.kubeconfig)
+	if err != nil {
+		return err
+	}
+	if r.namespace == "" {
+		r.namespace = *currentNamespace
+	}
+
+	// Create a RHINO job
+	_, err = r.runRhinoJob(dynamicClient, args)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(0)
+	}
+	fmt.Println("RhinoJob", r.funcName, "created")
+	return nil
+}
+
+
+func (r *RunOptions) printYAML(args []string) (yamlFile string) {
 	yamlFile = `apiVersion: openrhino.org/v1alpha1
 kind: RhinoJob
 metadata:
   labels:
     app.kubernetes.io/name: rhinojob 
     app.kubernetes.io/instance: rhinojob-`
-	yamlFile += funcName + `
+	yamlFile += r.funcName + `
     app.kubernetes.io/part-of: rhino-operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: rhino-operator
   name: rhinojob-`
-	yamlFile += funcName + `
+	yamlFile += r.funcName + `
 spec:
   image: "`
 	yamlFile += args[0] + `"
   ttl: `
-	yamlFile += strconv.Itoa(execTime) + `
+	yamlFile += strconv.Itoa(r.timeToLive) + `
   parallelism: `
-	yamlFile += strconv.Itoa(parallel) + ` 
+	yamlFile += strconv.Itoa(r.parallel) + ` 
   appExec: "./mpi-func"`
 	if len(args) > 1 {
 		yamlFile += `
@@ -106,22 +121,23 @@ spec:
 		}
 		yamlFile += `]`
 	}
-	if len(dataServer) != 0 {
+	if len(r.dataServer) != 0 {
 		yamlFile += `
-  dataServer: "` + dataServer + `"`
+  dataServer: "` + r.dataServer + `"`
 		yamlFile += `
-  dataPath: "` + dataPath + `"`
+  dataPath: "` + r.dataPath + `"`
 	}
 	return yamlFile
 }
 
-func runRhinoJob(client dynamic.Interface, args []string) (*rhinojob.RhinoJobList, error) {
+func (r *RunOptions) runRhinoJob(client dynamic.Interface, args []string) (*rhinojob.RhinoJobList, error) {
 	decoder := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 	obj := &unstructured.Unstructured{}
-	if _, _, err := decoder.Decode([]byte(printYAML(args)), nil, obj); err != nil {
+	rhinojobYAML := r.printYAML(args)
+	if _, _, err := decoder.Decode([]byte(rhinojobYAML), nil, obj); err != nil {
 		return nil, err
 	}
-	createdRhinoJob, err := client.Resource(RhinoJobGVR).Namespace(namespace).Create(context.TODO(), obj, metav1.CreateOptions{})
+	createdRhinoJob, err := client.Resource(RhinoJobGVR).Namespace(r.namespace).Create(context.TODO(), obj, metav1.CreateOptions{})
 
 	if err != nil {
 		return nil, err
@@ -135,10 +151,4 @@ func runRhinoJob(client dynamic.Interface, args []string) (*rhinojob.RhinoJobLis
 		return nil, err
 	}
 	return &rj, nil
-}
-
-func getFuncName(image string) string {
-	nameTag := strings.Split(image, "/")
-	funcName := strings.Split(nameTag[len(nameTag)-1], ":")[0]
-	return funcName
 }

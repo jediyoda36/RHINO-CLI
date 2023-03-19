@@ -1,5 +1,8 @@
 package cmd
+
 import (
+	"strings"
+
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -35,4 +38,10 @@ func buildFromKubeconfig(configPath string) (dynamicClient *dynamic.DynamicClien
 	}
 
 	return dynamicClient, currentNamespace, nil
+}
+
+func getFuncName(image string) string {
+	nameTag := strings.Split(image, "/")
+	funcName := strings.Split(nameTag[len(nameTag)-1], ":")[0]
+	return funcName
 }
