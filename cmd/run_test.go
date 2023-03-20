@@ -19,7 +19,7 @@ func TestRunSingleJob(t *testing.T) {
 	if strings.HasSuffix(cwd, "cmd") {
 		os.Chdir("..")
 	}
-
+	rootCmd := NewRootCommand()
 	// use `rhino build` to build template
 	os.Chdir("templates/func")
 	testFuncImageName := "test-run-func-cpp:v1"

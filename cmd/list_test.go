@@ -18,6 +18,7 @@ func TestListSingleJob(t *testing.T) {
 	if strings.HasSuffix(cwd, "cmd") {
 		os.Chdir("..")
 	}
+	rootCmd := NewRootCommand()
 	// use `rhino build` to build template
 	os.Chdir("templates/func")
 	testFuncName := "test-list-func-cpp"
