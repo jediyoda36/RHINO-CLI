@@ -38,7 +38,7 @@
                 "-i",
                 "sample:debug"
             ],
-            "cwd": "${workspaceFolder}/samples/integration"
+            "cwd": "${workspaceFolder}/templates/func"
         }
     ]
 }
