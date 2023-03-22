@@ -23,8 +23,8 @@
             "args": [
                 "run",
                 "--np",
-                "6",
-                "openrhino/sample"
+                "4",
+                "sample:debug"
             ]
         },
         {
@@ -36,7 +36,7 @@
             "args": [
                 "build",
                 "-i",
-                "openrhino/sample"
+                "sample:debug"
             ],
             "cwd": "${workspaceFolder}/samples/integration"
         }
