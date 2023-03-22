@@ -13,6 +13,7 @@ const templateFuncFolerName = "templates/func"
 
 // check if the error is reported when the --lang arg is set incorrectly
 func TestCreateLangErr(t *testing.T) {
+	rootCmd := NewRootCommand()
 	testFuncName := "test-create-func-c"
 	rootCmd.SetArgs([]string{"create", testFuncName, "--lang", "c"})
 	err := rootCmd.Execute()
@@ -29,7 +30,7 @@ func TestCreateFunc(t *testing.T) {
 	if strings.HasSuffix(cwd, "cmd") {
 		os.Chdir("..")
 	}
-
+	rootCmd := NewRootCommand()
 	testFuncName := "test-create-func-cpp"
 	rootCmd.SetArgs([]string{"create", testFuncName, "--lang", "cpp"})
 	err = rootCmd.Execute()

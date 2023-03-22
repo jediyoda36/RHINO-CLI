@@ -5,7 +5,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,6 +16,7 @@ func TestBuildSingleFileCpp(t *testing.T) {
 		os.Chdir("..")
 	}
 
+	rootCmd := NewRootCommand()
 	// to test build, first create a template folder
 	// this is a unit test for `build` command, so no further detailed test on `create`
 	testFuncName := "test-build-func-cpp"
