@@ -1,10 +1,14 @@
 package main
 
 import (
+	"os"
+
 	"github.com/OpenRHINO/RHINO-CLI/cmd"
 )
 
 func main() {
 	rootCmd := cmd.NewRootCommand()
-	rootCmd.Execute()
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
+	}
 }
