@@ -24,10 +24,10 @@ func NewDockerRunCommand() *cobra.Command {
 	dockerRunOpts := &DockerRunOptions{}
 	dockerRunCmd := &cobra.Command{
 		Use:   "docker-run [image]",
-		Short: "Submit and run a RHINO job using Docker",
-		Long:  "\nSubmit an MPI function/project and run it as a RHINO job using Docker",
-		Example: `  rhino dockerRun hello:v1.0
-  rhino dockerRun foo/matmul:v2.1 --np 4 -- arg1 arg2
+		Short: "Run an MPI program using Docker",
+		Long:  "\nSubmit and run an MPI job using Docker",
+		Example: `  rhino docker-run hello:v1.0
+  rhino docker-run foo/matmul:v2.1 --np 4 -- arg1 arg2
   rhino docker-run bar/image:v3.0 -v /path/on/host:/path/in/container --np 8`,
 		RunE: dockerRunOpts.dockerRun,
 	}
