@@ -28,14 +28,14 @@ func TestListSingleJob(t *testing.T) {
 	assert.Equal(t, nil, err, "preparatory work build failed: %s", errorMessage(err))
 
 	// test run command
-	execute("kubectl", []string{"create", "namespace", testFuncRunNamespace})
+	execShellCmd("kubectl", []string{"create", "namespace", testFuncRunNamespace})
 	rootCmd.SetArgs([]string{"run", testFuncImageName, "--namespace", testFuncRunNamespace})
 	err = rootCmd.Execute()
 	assert.Equal(t, nil, err, "preparatory work run failed: %s", errorMessage(err))
 	fmt.Println("Wait 10s and check job status")
 	time.Sleep(10 * time.Second)
 	// test list command
-	// when calling `rootCmd.Execute` to execute `list` command
+	// when calling `rootCmd.Execute` to execShellCmd `list` command
 	// rhinoJob info will be sent directly to os.Stdout and thus cannot be collected
 	// in order to collected that info, we replace os.Stdout with pipes in unix, and then
 	// switch back after checking finishes
@@ -71,9 +71,9 @@ func TestListSingleJob(t *testing.T) {
 	assert.Equal(t, true, foundRhinoJob, "test list failed: list output does not contain rhinojob created in this test")
 
 	// delete test namespace and rhinojob created just now
-	execute("kubectl", []string{"delete", "namespace", testFuncRunNamespace, "--force", "--grace-period=0"})
+	execShellCmd("kubectl", []string{"delete", "namespace", testFuncRunNamespace, "--force", "--grace-period=0"})
 
 	// delete the image built just now
-	execute("docker", []string{"rmi", testFuncImageName})
-	execute("sh", []string{"-c", "docker rmi -f $(docker images | grep none | grep second | awk '{print $3}')"})
+	execShellCmd("docker", []string{"rmi", testFuncImageName})
+	execShellCmd("sh", []string{"-c", "docker rmi -f $(docker images | grep none | grep second | awk '{print $3}')"})
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,7 +33,7 @@ func TestBuildSingleFileCpp(t *testing.T) {
 	rootCmd.SetArgs([]string{"build", "--image", testImageName})
 	err = rootCmd.Execute()
 	assert.Equal(t, fmt.Errorf("image name can only contain a~z, 0~9 and -"), err, "test failed: invalid image name not reported")
-	
+
 	// check if the error is reported when the make command set incorrectly
 	testFuncImageName := "test-build-func-cpp:v1"
 	rootCmd.SetArgs([]string{"build", "--image", testImageName, "--", "cmake"})
@@ -44,7 +45,7 @@ func TestBuildSingleFileCpp(t *testing.T) {
 	assert.Equal(t, nil, err, "test build failed: %s", errorMessage(err))
 
 	// use `docker image` to check whether the image has been built
-	cmdOutput, err := execute("docker", []string{"images"})
+	cmdOutput, err := execShellCmd("docker", []string{"images"})
 	assert.Equal(t, err, nil, "test build failed when using `docker images`: %s", errorMessage(err))
 	cmdOutputLines := strings.Split(cmdOutput, "\n")
 
@@ -58,8 +59,8 @@ func TestBuildSingleFileCpp(t *testing.T) {
 
 	// remove test image
 	if foundBuiltImage {
-		execute("docker", []string{"rmi", testFuncImageName})
-		execute("sh", []string{"-c", "docker rmi -f $(docker images | grep none | grep second | awk '{print $3}')"})
+		execShellCmd("docker", []string{"rmi", testFuncImageName})
+		execShellCmd("sh", []string{"-c", "docker rmi -f $(docker images | grep none | grep second | awk '{print $3}')"})
 	}
 
 	// remove template folder
