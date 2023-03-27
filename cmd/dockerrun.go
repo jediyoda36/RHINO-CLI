@@ -66,6 +66,27 @@ func (r *DockerRunOptions) dockerRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Check if the image exists
+	_, _, err = cli.ImageInspectWithRaw(ctx, args[0])
+	if err != nil {
+		if client.IsErrNotFound(err) {
+			fmt.Printf("Image %s not found, pulling from Docker Hub...\n", args[0])
+			// Pull the image
+			out, err := cli.ImagePull(ctx, args[0], types.ImagePullOptions{})
+			if err != nil {
+				return err
+			}
+			defer out.Close()
+			// Copy the output to stdout
+			_, err = io.Copy(os.Stdout, out)
+			if err != nil && err != io.EOF {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
 	// Configure the container
 	entrypoint := []string{"mpirun", "-np", strconv.Itoa(r.parallel), "/app/mpi-func"}
 	containerConfig := &container.Config{
@@ -103,7 +124,6 @@ func (r *DockerRunOptions) dockerRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	defer attachResp.Close()
-
 	// Copy container output to stdout
 	_, err = io.Copy(os.Stdout, attachResp.Reader)
 	if err != nil && err != io.EOF {
