@@ -14,13 +14,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
 type DockerRunOptions struct {
-	parallel   int
-	volume    string
-	funcName   string
+	parallel int
+	volume   string
+	funcName string
 }
-
 
 func NewDockerRunCommand() *cobra.Command {
 	dockerRunOpts := &DockerRunOptions{}
@@ -29,7 +27,8 @@ func NewDockerRunCommand() *cobra.Command {
 		Short: "Submit and run a RHINO job using Docker",
 		Long:  "\nSubmit an MPI function/project and run it as a RHINO job using Docker",
 		Example: `  rhino dockerRun hello:v1.0
-  rhino dockerRun foo/matmul:v2.1 --np 4 -- arg1 arg2 `,
+  rhino dockerRun foo/matmul:v2.1 --np 4 -- arg1 arg2
+  rhino docker-run bar/image:v3.0 -v /path/on/host:/path/in/container --np 8`,
 		RunE: dockerRunOpts.dockerRun,
 	}
 
@@ -38,7 +37,6 @@ func NewDockerRunCommand() *cobra.Command {
 
 	return dockerRunCmd
 }
-
 
 func (r *DockerRunOptions) dockerRun(cmd *cobra.Command, args []string) error {
 	// Check the arguments
@@ -50,7 +48,7 @@ func (r *DockerRunOptions) dockerRun(cmd *cobra.Command, args []string) error {
 	if r.parallel < 1 {
 		return fmt.Errorf("the number of MPI processes (--np) must be greater than 0")
 	}
-	// 处理 -v 参数
+	// Handle -v option
 	hostPath, containerPath := "", ""
 	if r.volume != "" {
 		volumeParts := strings.SplitN(r.volume, ":", 2)
@@ -61,7 +59,7 @@ func (r *DockerRunOptions) dockerRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// 设置上下文和Docker客户端
+	// Set up the context and Docker client
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -71,11 +69,11 @@ func (r *DockerRunOptions) dockerRun(cmd *cobra.Command, args []string) error {
 	// Configure the container
 	entrypoint := []string{"mpirun", "-np", strconv.Itoa(r.parallel), "/app/mpi-func"}
 	containerConfig := &container.Config{
-		Image: args[0],
+		Image:      args[0],
 		Entrypoint: entrypoint,
-		Cmd:   args[1:],
+		Cmd:        args[1:],
 		Env: []string{
-			"OMPI_MCA_btl_base_warn_component_unused=0", // Suppress OpenMPI warning, if OpenMPI is used 
+			"OMPI_MCA_btl_base_warn_component_unused=0", // Suppress OpenMPI warning, if OpenMPI is used
 		},
 	}
 	hostConfig := &container.HostConfig{}
@@ -84,7 +82,7 @@ func (r *DockerRunOptions) dockerRun(cmd *cobra.Command, args []string) error {
 		bind := []string{hostPath + ":" + containerPath}
 		hostConfig.Binds = bind
 	}
-	
+
 	// Create and start the container
 	resp, err := cli.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, "")
 	if err != nil {
