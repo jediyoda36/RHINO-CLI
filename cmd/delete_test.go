@@ -27,7 +27,7 @@ func TestDeleteSingleJob(t *testing.T) {
 	assert.Equal(t, nil, err, "preparatory work build failed: %s", errorMessage(err))
 
 	// test run command
-	execute("kubectl", []string{"create", "namespace", testFuncRunNamespace})
+	execShellCmd("kubectl", []string{"create", "namespace", testFuncRunNamespace})
 	rootCmd.SetArgs([]string{"run", testFuncImageName, "--namespace", testFuncRunNamespace})
 	err = rootCmd.Execute()
 	assert.Equal(t, nil, err, "preparatory work run failed: %s", errorMessage(err))
@@ -41,7 +41,7 @@ func TestDeleteSingleJob(t *testing.T) {
 	assert.Equal(t, nil, err, "test delete failed: %s", errorMessage(err))
 
 	// check if the rhinojob created just now is deleted successfully
-	actualCmdOutput, err := execute("kubectl", []string{"get", "rhinojob", "-n", testFuncRunNamespace})
+	actualCmdOutput, err := execShellCmd("kubectl", []string{"get", "rhinojob", "-n", testFuncRunNamespace})
 	assert.Equal(t, nil, err, "test delete failed: %s", errorMessage(err))
 
 	expetedCmdOutput := "No resources found in rhino-test namespace.\n"
@@ -50,9 +50,9 @@ func TestDeleteSingleJob(t *testing.T) {
 		expetedCmdOutput, actualCmdOutput)
 
 	// delete test namespace and rhinojob created just now
-	execute("kubectl", []string{"delete", "namespace", testFuncRunNamespace, "--force", "--grace-period=0"})
-	
+	execShellCmd("kubectl", []string{"delete", "namespace", testFuncRunNamespace, "--force", "--grace-period=0"})
+
 	// delete the image built just now
-	execute("docker", []string{"rmi", testFuncImageName})
-	execute("sh", []string{"-c", "docker rmi -f $(docker images | grep none | grep second | awk '{print $3}')"})
+	execShellCmd("docker", []string{"rmi", testFuncImageName})
+	execShellCmd("sh", []string{"-c", "docker rmi -f $(docker images | grep none | grep second | awk '{print $3}')"})
 }
