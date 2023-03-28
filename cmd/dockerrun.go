@@ -11,6 +11,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/spf13/cobra"
 )
 
@@ -124,10 +125,26 @@ func (r *DockerRunOptions) dockerRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	defer attachResp.Close()
-	// Copy container output to stdout
-	_, err = io.Copy(os.Stdout, attachResp.Reader)
+	// Copy container output to stdout and stderr
+	_, err = stdcopy.StdCopy(os.Stdout, os.Stderr, attachResp.Reader)
 	if err != nil && err != io.EOF {
-		return err
+		if err != nil && err != io.EOF {
+			return err
+		}
+	}
+
+	// Wait for the container to exit and retrieve the exit status
+	waitCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
+	var waitResp container.WaitResponse
+	var waitErr error
+
+	select {
+	case waitResp = <-waitCh:
+		if waitResp.StatusCode != 0 {
+			return fmt.Errorf("container exited with non-zero status: %d", waitResp.StatusCode)
+		}
+	case waitErr = <-errCh:
+		return waitErr
 	}
 
 	return nil

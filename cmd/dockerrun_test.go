@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -23,6 +24,38 @@ func TestDockerRun(t *testing.T) {
 	// TODO: Add more tests for different arguments
 	err := dockerRunCmd.RunE(dockerRunCmd, args)
 	if err != nil {
-		t.Errorf("Docker run with 'openrhino/rhino-test-sum:v0.1' image failed: %s", err.Error())
+		t.Errorf("Rhino docker-run with 'openrhino/rhino-test-sum:v0.1' image failed: %s", err.Error())
+	}
+}
+
+func TestDockerRunWithNonExistentImage(t *testing.T) {
+	dockerRunCmd := NewDockerRunCommand()
+	args := []string{"openrhino/do-not-exist"}
+
+	err := dockerRunCmd.RunE(dockerRunCmd, args)
+	// Error is expected because the image does not exist
+	if err == nil {
+		t.Error("Rhino docker-run with nonexistent image did not return an error")
+	} else {
+		expectedErrorSubstring := "not exist"
+		if !strings.Contains(err.Error(), expectedErrorSubstring) {
+			t.Errorf("Rhino docker-run with nonexistent image returned unexpected error: %s", err.Error())
+		}
+	}
+}
+
+func TestDockerRunWithInvalidArg(t *testing.T) {
+	dockerRunCmd := NewDockerRunCommand()
+	args := []string{"openrhino/integration", "invalid-arg"}
+
+	err := dockerRunCmd.RunE(dockerRunCmd, args)
+	// Error is expected because the image does not exist
+	if err == nil {
+		t.Error("Rhino docker-run with invalid args did not return an error")
+	} else {
+		expectedErrorSubstring := "container exited with non-zero status"
+		if !strings.Contains(err.Error(), expectedErrorSubstring) {
+			t.Errorf("Rhino docker-run with invalid args returned unexpected error: %s", err.Error())
+		}
 	}
 }
