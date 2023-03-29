@@ -60,12 +60,13 @@ func getFuncName(image string) string {
 }
 
 
-
+// DockerHelper is a helper struct for Docker operations
 type DockerHelper struct {
 	ctx context.Context
 	cli *client.Client
 }
 
+// The factory function creates a new DockerHelper instance
 func NewDockerHelper() (*DockerHelper, error) {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
