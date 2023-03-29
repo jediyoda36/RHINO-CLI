@@ -114,23 +114,22 @@ func (r *DockerRunOptions) dockerRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Attach container output to the command line program's output
-	attachOptions := types.ContainerAttachOptions{
-		Stream: true,
-		Stdout: true,
-		Stderr: true,
+	// Get the container logs
+	logOptions := types.ContainerLogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Follow:     true,
 	}
-	attachResp, err := cli.ContainerAttach(ctx, resp.ID, attachOptions)
+	logReader, err := cli.ContainerLogs(ctx, resp.ID, logOptions)
 	if err != nil {
 		return err
 	}
-	defer attachResp.Close()
-	// Copy container output to stdout and stderr
-	_, err = stdcopy.StdCopy(os.Stdout, os.Stderr, attachResp.Reader)
+	defer logReader.Close()
+
+	// Use a demultiplexer to split stdout and stderr, and copy the container logs to the program output
+	_, err = stdcopy.StdCopy(os.Stdout, os.Stderr, logReader)
 	if err != nil && err != io.EOF {
-		if err != nil && err != io.EOF {
-			return err
-		}
+		return fmt.Errorf("error copying container logs: %v", err)
 	}
 
 	// Wait for the container to exit and retrieve the exit status
