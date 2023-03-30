@@ -35,7 +35,7 @@ func TestDeleteSingleJob(t *testing.T) {
 	// test delete
 	fmt.Println("Wait 10s and check job status")
 	time.Sleep(10 * time.Second)
-	testRhinoJobName := "rhinojob-" + testFuncName
+	testRhinoJobName := testFuncName
 	rootCmd.SetArgs([]string{"delete", testRhinoJobName, "--namespace", testFuncRunNamespace})
 	err = rootCmd.Execute()
 	assert.Equal(t, nil, err, "test delete failed: %s", errorMessage(err))

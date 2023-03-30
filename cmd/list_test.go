@@ -61,7 +61,7 @@ func TestListSingleJob(t *testing.T) {
 	cmdOutputLines := strings.Split(cmdOutput, "\n")
 
 	var foundRhinoJob bool
-	testRhinoJobName := "rhinojob-" + testFuncName
+	testRhinoJobName := testFuncName
 	for _, line := range cmdOutputLines {
 		if strings.HasPrefix(line, testRhinoJobName) {
 			foundRhinoJob = true

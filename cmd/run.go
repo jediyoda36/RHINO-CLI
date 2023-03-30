@@ -91,19 +91,18 @@ func (r *RunOptions) run(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-
 func (r *RunOptions) printYAML(args []string) (yamlFile string) {
 	yamlFile = `apiVersion: openrhino.org/v1alpha1
 kind: RhinoJob
 metadata:
   labels:
     app.kubernetes.io/name: rhinojob 
-    app.kubernetes.io/instance: rhinojob-`
+    app.kubernetes.io/instance: `
 	yamlFile += r.funcName + `
     app.kubernetes.io/part-of: rhino-operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: rhino-operator
-  name: rhinojob-`
+  name: `
 	yamlFile += r.funcName + `
 spec:
   image: "`
