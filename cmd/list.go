@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"path/filepath"
 
 	rhinojob "github.com/OpenRHINO/RHINO-Operator/api/v1alpha1"
@@ -66,9 +67,24 @@ func (l *ListOptions) list(cmd *cobra.Command, args []string) error {
 	if len(list.Items) == 0 {
 		return fmt.Errorf("no RhinoJobs found in the namespace")
 	}
-	fmt.Printf("%-20s\t%-15s\t%-5s\n", "Name", "Parallelism", "Status")
+
+	var maxName float64 = 0
+	var maxParallel float64 = 0
+	var maxStatus float64 = 0
 	for _, rj := range list.Items {
-		fmt.Printf("%-20v\t%-15v\t%-5v\n", rj.Name, *rj.Spec.Parallelism, rj.Status.JobStatus)
+		// get max string length of rj.Name, rj.Spec.Parallelism, rj.Status.JobStatus
+		maxName = math.Max(maxName, float64(len(string(rj.Name))))
+		maxParallel = math.Max(maxParallel, float64(len(string(*rj.Spec.Parallelism))))
+		maxStatus = math.Max(maxStatus, float64(len(string(rj.Status.JobStatus))))
+	}
+	nameFmt := fmt.Sprintf("%%-%ds", int(maxName)+20)
+	parallelFmtD := fmt.Sprintf("%%-%dd", int(maxParallel)+15)
+	parallelFmtS := fmt.Sprintf("%%-%ds", int(maxParallel)+15)
+	statusFmt := fmt.Sprintf("%%-%ds", int(maxStatus)+5)
+
+	fmt.Printf(nameFmt+parallelFmtS+statusFmt+"\n", "Name", "Parallelism", "Status")
+	for _, rj := range list.Items {
+		fmt.Printf(nameFmt+parallelFmtD+statusFmt+"\n", rj.Name, int(*rj.Spec.Parallelism), rj.Status.JobStatus)
 	}
 	return nil
 }
