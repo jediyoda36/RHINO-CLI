@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 
 	rhinojob "github.com/OpenRHINO/RHINO-Operator/api/v1alpha1"
@@ -40,7 +39,7 @@ func (l *ListOptions) list(cmd *cobra.Command, args []string) error {
 	// Check the arguments
 	if len(args) != 0 {
 		cmd.Help()
-		os.Exit(0)
+		return nil
 	}
 
 	// Get the kubeconfig file
@@ -48,10 +47,9 @@ func (l *ListOptions) list(cmd *cobra.Command, args []string) error {
 		if home := homedir.HomeDir(); home != "" {
 			l.kubeconfig = filepath.Join(home, ".kube", "config")
 		} else {
-			fmt.Println("Error: kubeconfig file not found, please use --config to specify the absolute path")
-			os.Exit(0)
+			return fmt.Errorf("kubeconfig file not found, please use --config to specify the absolute path")
 		}
-	}	
+	}
 
 	// Build the dynamic client
 	dynamicClient, currentNamespace, err := buildFromKubeconfig(l.kubeconfig)
@@ -66,8 +64,7 @@ func (l *ListOptions) list(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	if len(list.Items) == 0 {
-		fmt.Println("No RhinoJobs found in the namespace")
-		os.Exit(0)
+		return fmt.Errorf("no RhinoJobs found in the namespace")
 	}
 	fmt.Printf("%-20s\t%-15s\t%-5s\n", "Name", "Parallelism", "Status")
 	for _, rj := range list.Items {
