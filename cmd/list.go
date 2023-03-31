@@ -65,7 +65,7 @@ func (l *ListOptions) list(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	if len(list.Items) == 0 {
-		return fmt.Errorf("no RhinoJobs found in the namespace")
+		fmt.Println("Warning: no RhinoJobs found in the namespace")
 	}
 
 	var maxName float64 = 0
