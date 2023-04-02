@@ -20,6 +20,22 @@ jobs:
       with:
         go-version: 1.19
 
+    - name: Install Minikube
+      run: |
+        curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+        sudo install minikube-linux-amd64 /usr/local/bin/minikube
+    
+    - name: Start Minikube
+      run: |
+        sudo minikube start --kubernetes-version=v1.24.10 --force
+    
+    - name: Wait for Minikube
+      run: |
+        while [ "$(sudo minikube status --format '{{.Host}}')" != "Running" ]; do
+          echo "Waiting for Minikube to start..."
+          sleep 5
+        done
+
     - name: Build
       run: make build
 
