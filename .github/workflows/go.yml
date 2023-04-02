@@ -36,8 +36,12 @@ jobs:
           sleep 5
         done
 
+    - name: Install Rhino Operator
+      run: |
+        sudo kubectl apply -f https://raw.githubusercontent.com/OpenRHINO/RHINO-Operator/main/install-rhino-operator.yaml
+
     - name: Build
-      run: make build
+      run: sudo make build
 
     - name: Test
-      run: go test -v ./...
+      run: sudo go test -v ./...
