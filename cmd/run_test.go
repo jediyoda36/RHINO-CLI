@@ -35,7 +35,7 @@ func TestRunSingleJob(t *testing.T) {
 
 	// use `kubectl get rhinojob` to check whether rhinojob has been created
 	fmt.Println("Wait 60s and check job status")
-	time.Sleep(60 * time.Second)
+	time.Sleep(60 * time.Second) //60s is long enough for this simple test job to complete
 	cmdOutput, err := execShellCmd("kubectl", []string{"get", "rhinojob", "--namespace", testFuncRunNamespace})
 	assert.Equal(t, nil, err, "test run failed: %s", errorMessage(err))
 	assert.Equal(t, true, strings.Contains(cmdOutput, "Completed"), "rhinojob failed to start")
