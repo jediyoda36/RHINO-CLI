@@ -64,33 +64,38 @@ jobs:
         pip install openai
 
     - name: Analyze Test Results with GPT
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: |
-        python -c "
-import openai, os
+        echo "Writing Python script to analyze test results..."
+        cat > analyze_test_results.py <<- EOM
+        import openai, os
 
-openai.api_key = os.environ['OPENAI_API_KEY']
+        # Set up OpenAI API client
+        openai.api_key = "${{ secrets.OPENAI_API_KEY }}"
 
-with open('test_results.txt', 'r') as f:
-    lines = f.readlines()
-    last_200_lines = lines[-200:]
-    test_results = ''.join(last_200_lines)
+        # Get the test results
+        with open("test_results.txt", "r") as f:
+            lines = f.readlines()
+            last_200_lines = lines[-200:]
+            test_results = ''.join(last_200_lines)
 
-messages = [
-    {'role': 'system', 'content': 'You are a helpful assistant that can analyze test results.'},
-    {'role': 'user', 'content': f'Please analyze the following test results: \n{test_results}'}
-]
+        # Create a prompt for GPT
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant that can analyze test results."},
+            {"role": "user", "content": f"Please analyze the following test results: \n{test_results}"}
+        ]
+        # Call the OpenAI API
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            max_tokens=100,
+            temperature=0.5,
+        )
 
-response = openai.ChatCompletion.create(
-    model='gpt-3.5-turbo',
-    messages=messages,
-    max_tokens=300,
-    temperature=0.5,
-)
+        # Get the analysis text
+        analysis_text = response.choices[0]['message']['content'].strip()
 
-analysis_text = response.choices[0]['message']['content'].strip()
-
-print('GPT Test Analysis:')
-print(analysis_text)
-"
+        # Print the analysis text to the console
+        print("GPT Test Analysis:")
+        print(analysis_text)
+        EOM
+        python3 analyze_test_results.py
