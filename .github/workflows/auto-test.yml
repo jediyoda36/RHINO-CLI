@@ -64,6 +64,7 @@ jobs:
         pip install openai
 
     - name: Analyze Test Results with GPT
+      if: github.event.repository.full_name == 'OpenRHINO/RHINO-CLI'
       run: |
         echo "Writing Python script to analyze test results..."
         cat > analyze_test_results.py <<- EOM
