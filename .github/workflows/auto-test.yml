@@ -76,7 +76,7 @@ jobs:
         # Get the test results
         with open("test_results.txt", "r") as f:
             lines = f.readlines()
-            last_200_lines = lines[-200:]
+            last_200_lines = lines[-150:]
             test_results = ''.join(last_200_lines)
 
         # Create a prompt for GPT
