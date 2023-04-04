@@ -119,15 +119,3 @@ func TestDockerRunWithInvalidArgs(t *testing.T) {
 		}
 	}
 }
-
-//Introduced to test the test-results-analysis by GPT
-func TestWillFail(t *testing.T) {
-	dockerRunCmd := NewDockerRunCommand()
-
-	args := []string{"openrhino/integration:test-v0.2.0"} //Set the arguments
-
-	err := dockerRunCmd.RunE(dockerRunCmd, args)
-	if err != nil {
-		t.Errorf(err.Error())
-	}
-}
