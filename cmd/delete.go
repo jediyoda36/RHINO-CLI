@@ -58,7 +58,7 @@ func (d *DeleteOptions) runDelete(cmd *cobra.Command, args []string) error {
 
 	err = dynamicClient.Resource(RhinoJobGVR).Namespace(d.namespace).Delete(context.TODO(), d.rhinojobName, metav1.DeleteOptions{})
 	if err != nil {
-		return fmt.Errorf(err.Error())
+		return err
 	}
 	fmt.Println("RhinoJob " + d.rhinojobName + " deleted")
 	return nil

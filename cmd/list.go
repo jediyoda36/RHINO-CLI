@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math"
+	"os"
 	"path/filepath"
+	"text/tabwriter"
 
 	rhinojob "github.com/OpenRHINO/RHINO-Operator/api/v1alpha1"
 	"github.com/spf13/cobra"
@@ -68,24 +69,18 @@ func (l *ListOptions) list(cmd *cobra.Command, args []string) error {
 		fmt.Println("Warning: no RhinoJobs found in the namespace")
 	}
 
-	var maxName float64 = 0
-	var maxParallel float64 = 0
-	var maxStatus float64 = 0
-	for _, rj := range list.Items {
-		// get max string length of rj.Name, rj.Spec.Parallelism, rj.Status.JobStatus
-		maxName = math.Max(maxName, float64(len(string(rj.Name))))
-		maxParallel = math.Max(maxParallel, float64(len(string(*rj.Spec.Parallelism))))
-		maxStatus = math.Max(maxStatus, float64(len(string(rj.Status.JobStatus))))
-	}
-	nameFmt := fmt.Sprintf("%%-%ds", int(maxName)+20)
-	parallelFmtD := fmt.Sprintf("%%-%dd", int(maxParallel)+15)
-	parallelFmtS := fmt.Sprintf("%%-%ds", int(maxParallel)+15)
-	statusFmt := fmt.Sprintf("%%-%ds", int(maxStatus)+5)
+	w := tabwriter.NewWriter(os.Stdout, 2, 0, 2, ' ', 0)
+	fmt.Fprintln(w, "Name\tParallelism\tStatus")
 
-	fmt.Printf(nameFmt+parallelFmtS+statusFmt+"\n", "Name", "Parallelism", "Status")
 	for _, rj := range list.Items {
-		fmt.Printf(nameFmt+parallelFmtD+statusFmt+"\n", rj.Name, int(*rj.Spec.Parallelism), rj.Status.JobStatus)
+		fmt.Fprintf(w, "%s\t%d\t%s\n", rj.Name, *rj.Spec.Parallelism, rj.Status.JobStatus)
 	}
+
+	// 刷新输出，确保所有内容写入 stdout
+	if err := w.Flush(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
