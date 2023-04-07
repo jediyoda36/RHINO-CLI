@@ -82,18 +82,18 @@ func (l *ListOptions) list(cmd *cobra.Command, args []string) error {
 	}
 	if len(list.Items) == 0 {
 		fmt.Println("Warning: no RhinoJobs found in the namespace")
-	}
+	} else {
+		w := tabwriter.NewWriter(os.Stdout, 2, 0, 2, ' ', 0)
+		fmt.Fprintln(w, "Name\tParallelism\tStatus")
 
-	w := tabwriter.NewWriter(os.Stdout, 2, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "Name\tParallelism\tStatus")
+		for _, rj := range list.Items {
+			fmt.Fprintf(w, "%s\t%d\t%s\n", rj.Name, *rj.Spec.Parallelism, rj.Status.JobStatus)
+		}
 
-	for _, rj := range list.Items {
-		fmt.Fprintf(w, "%s\t%d\t%s\n", rj.Name, *rj.Spec.Parallelism, rj.Status.JobStatus)
-	}
-
-	// 刷新输出，确保所有内容写入 stdout
-	if err := w.Flush(); err != nil {
-		return err
+		// 刷新输出，确保所有内容写入 stdout
+		if err := w.Flush(); err != nil {
+			return err
+		}
 	}
 
 	return nil
