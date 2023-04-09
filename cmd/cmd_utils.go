@@ -17,11 +17,11 @@ package cmd
 
 import (
 	"context"
-	"strings"
 	"fmt"
 	"io"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -56,7 +56,7 @@ func buildFromKubeconfig(configPath string) (dynamicClient *dynamic.DynamicClien
 	}
 	context, exist := cmdapiConfig.Contexts[cmdapiConfig.CurrentContext]
 	if exist {
-		if context.Namespace == "" { 
+		if context.Namespace == "" {
 			//If namespace is not defined in kubeconfig, use "default"
 			context.Namespace = "default"
 		}
@@ -73,7 +73,6 @@ func getFuncName(image string) string {
 	funcName := strings.Split(nameTag[len(nameTag)-1], ":")[0]
 	return funcName
 }
-
 
 // DockerHelper is a helper struct for Docker operations
 type DockerHelper struct {
@@ -173,7 +172,7 @@ func (dh *DockerHelper) getContainerLogs(containerID string) error {
 	// Use a demultiplexer to split stdout and stderr, and copy the container logs to the program output
 	_, err = stdcopy.StdCopy(os.Stdout, os.Stderr, logReader)
 	if err != nil && err != io.EOF {
-		return fmt.Errorf("error copying container logs: %v", err)
+		return fmt.Errorf("copying container logs: %v", err)
 	}
 
 	return nil

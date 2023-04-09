@@ -17,7 +17,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -49,12 +48,11 @@ func (r *DockerRunOptions) dockerRun(cmd *cobra.Command, args []string) error {
 	// Check the arguments
 	if len(args) == 0 {
 		cmd.Help()
-		os.Exit(0)
+		return nil
 	}
 	if r.parallel < 1 {
 		return fmt.Errorf("the number of MPI processes (--np) must be greater than 0")
 	}
-
 
 	// Create a DockerHelper instance
 	helper, err := NewDockerHelper()

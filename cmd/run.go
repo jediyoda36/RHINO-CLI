@@ -19,7 +19,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strconv"
 
@@ -70,7 +69,7 @@ func (r *RunOptions) run(cmd *cobra.Command, args []string) error {
 	// Check the arguments
 	if len(args) == 0 {
 		cmd.Help()
-		os.Exit(0)
+		return nil
 	}
 	r.funcName = getFuncName(args[0])
 	if r.parallel < 1 {
@@ -83,8 +82,7 @@ func (r *RunOptions) run(cmd *cobra.Command, args []string) error {
 		if home := homedir.HomeDir(); home != "" {
 			r.kubeconfig = filepath.Join(home, ".kube", "config")
 		} else {
-			fmt.Println("Error: kubeconfig file not found, please use --config to specify the absolute path")
-			os.Exit(0)
+			return fmt.Errorf("kubeconfig file not found, please use --config to specify the absolute path")
 		}
 	}
 
@@ -100,7 +98,7 @@ func (r *RunOptions) run(cmd *cobra.Command, args []string) error {
 	_, err = r.runRhinoJob(dynamicClient, args)
 	if err != nil {
 		fmt.Println(err.Error())
-		os.Exit(0)
+		return fmt.Errorf("failed to create a RHINO job")
 	}
 	fmt.Println("RhinoJob", r.funcName, "created")
 	return nil

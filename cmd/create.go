@@ -48,7 +48,7 @@ func NewCreateCommand() *cobra.Command {
 func (c *CreateOptions) argsCheck(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 && len(c.language) == 0 {
 		cmd.Help()
-		os.Exit(0)
+		return nil
 	} else if len(c.language) == 0 {
 		return fmt.Errorf("language cannot be empty")
 	} else if len(args) == 0 {
@@ -63,17 +63,15 @@ func (c *CreateOptions) argsCheck(cmd *cobra.Command, args []string) error {
 func (c *CreateOptions) runCreate(cmd *cobra.Command, args []string) error {
 	dirName := args[0]
 	if _, err := os.Stat(dirName); err == nil {
-		fmt.Println("Error: folder", dirName, "already exists")
-		os.Exit(0)
+		return fmt.Errorf("folder %s already exists", dirName)
 	}
 	if err := os.Mkdir(dirName, 0700); err != nil {
-		fmt.Println("Error: folder", dirName, "could not be created")
-		os.Exit(0)
+		return fmt.Errorf("folder %s could not be created", dirName)
+
 	}
 
 	if err := generateTemplate(dirName); err != nil {
-		fmt.Println("Error:", err.Error())
-		os.Exit(0)
+		return fmt.Errorf("generate template failed: %s", err.Error())
 	}
 
 	return nil

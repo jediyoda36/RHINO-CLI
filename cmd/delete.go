@@ -18,7 +18,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -56,8 +55,7 @@ func (d *DeleteOptions) argsCheck(cmd *cobra.Command, args []string) error {
 		if home := homedir.HomeDir(); home != "" {
 			d.kubeconfig = filepath.Join(home, ".kube", "config")
 		} else {
-			fmt.Println("Error: kubeconfig file not found, please use --config to specify the absolute path")
-			os.Exit(0)
+			return fmt.Errorf("kubeconfig file not found, please use --config to specify the absolute path")
 		}
 	}
 
@@ -75,8 +73,7 @@ func (d *DeleteOptions) runDelete(cmd *cobra.Command, args []string) error {
 
 	err = dynamicClient.Resource(RhinoJobGVR).Namespace(d.namespace).Delete(context.TODO(), d.rhinojobName, metav1.DeleteOptions{})
 	if err != nil {
-		fmt.Println("Error: ", err.Error())
-		os.Exit(0)
+		return err
 	}
 	fmt.Println("RhinoJob " + d.rhinojobName + " deleted")
 	return nil
