@@ -110,13 +110,13 @@ kind: RhinoJob
 metadata:
   labels:
     app.kubernetes.io/name: rhinojob 
-    app.kubernetes.io/instance: `
-	yamlFile += r.funcName + `
+    app.kubernetes.io/instance: "`
+	yamlFile += r.funcName + `"
     app.kubernetes.io/part-of: rhino-operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: rhino-operator
-  name: `
-	yamlFile += r.funcName + `
+  name: "`
+	yamlFile += r.funcName + `"
 spec:
   image: "`
 	yamlFile += args[0] + `"
