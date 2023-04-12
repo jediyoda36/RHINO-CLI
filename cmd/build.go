@@ -41,8 +41,8 @@ func NewBuildCommand() *cobra.Command {
 		Long:  "\nBuild MPI function/project into a docker image",
 		Example: `  rhino build --image foo/hello:v1.0
   rhino build -f ./src/config/Makefile -i bar/mpibench:v2.1 -- make -j all arch=Linux`,
-		Args:  buildOpts.validateArgs,
-		RunE:  buildOpts.runBuild,
+		Args: buildOpts.validateArgs,
+		RunE: buildOpts.runBuild,
 	}
 
 	buildCmd.Flags().StringVarP(&buildOpts.image, "image", "i", "", "full image form: [registry]/[namespace]/[name]:[tag]")
@@ -54,6 +54,8 @@ func NewBuildCommand() *cobra.Command {
 func (b *BuildOptions) validateArgs(buildCmd *cobra.Command, args []string) error {
 	if len(b.image) == 0 {
 		return fmt.Errorf("please provide the image name")
+	} else if len(b.image) > 63 {
+		return fmt.Errorf("the image name cannot exceed 63 characters")
 	} else if len(args) > 0 && args[0] != "make" {
 		return fmt.Errorf("build command must start with 'make'")
 	}
