@@ -50,56 +50,7 @@ jobs:
         sudo minikube -p minikube docker-env | sudo tee /tmp/docker-env.sh
         sudo chmod +x /tmp/docker-env.sh
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.9
-
-    - name: Install OpenAI
-      run: |
-        pip install openai
-
     - name: Test
       run: |
-        sudo --preserve-env=GOROOT,GOPATH,DOCKER_TLS_VERIFY,DOCKER_HOST,DOCKER_CERT_PATH,MINIKUBE_ACTIVE_DOCKERD bash -c "source /tmp/docker-env.sh && go test -v ./... > test_results.txt"
-        exit_code=$?
-        cat test_results.txt
-        exit $exit_code
+        sudo --preserve-env=GOROOT,GOPATH,DOCKER_TLS_VERIFY,DOCKER_HOST,DOCKER_CERT_PATH,MINIKUBE_ACTIVE_DOCKERD bash -c "source /tmp/docker-env.sh && go test -v ./..."
 
-    - name: Analyze Test Results with GPT
-      if: always() && github.event.repository.full_name == 'OpenRHINO/RHINO-CLI'
-      run: |
-        echo "Writing Python script to analyze test results..."
-        cat > analyze_test_results.py <<- EOM
-        import openai, os
-
-        # Set up OpenAI API client
-        openai.api_key = "${{ secrets.OPENAI_API_KEY }}"
-
-        # Get the test results
-        with open("test_results.txt", "r") as f:
-            lines = f.readlines()
-            last_lines = lines[-150:]
-            test_results = ''.join(last_lines)
-
-        # Create a prompt for GPT
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant that can analyze test results."},
-            {"role": "user", "content": f"Please analyze the following test results: \n{test_results}"}
-        ]
-        # Call the OpenAI API
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=messages,
-            max_tokens=300,
-            temperature=0.5,
-        )
-
-        # Get the analysis text
-        analysis_text = response.choices[0]['message']['content'].strip()
-
-        # Print the analysis text to the console
-        print("GPT Test Analysis:")
-        print(analysis_text)
-        EOM
-        python3 analyze_test_results.py
